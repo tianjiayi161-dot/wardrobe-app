@@ -5,7 +5,10 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017'
-const options = {}
+const options = {
+  serverSelectionTimeoutMS: 10000, // 10秒超时
+  socketTimeoutMS: 45000, // 45秒socket超时
+}
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>

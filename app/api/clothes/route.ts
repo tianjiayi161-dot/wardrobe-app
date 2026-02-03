@@ -48,15 +48,24 @@ export async function POST(request: NextRequest) {
   try {
     const input: CreateClothingInput = await request.json()
 
+    console.log('收到添加衣服请求:', {
+      name: input.name,
+      category: input.category,
+      hasImageUrl: !!input.imageUrl,
+    })
+
     // 验证必填字段
     if (!input.name || !input.category || !input.imageUrl) {
+      console.error('缺少必填字段:', { input })
       return NextResponse.json(
         { error: '缺少必填字段' },
         { status: 400 }
       )
     }
 
+    console.log('正在连接MongoDB...')
     const collection = await getCollection('clothes')
+    console.log('MongoDB连接成功')
 
     const newClothing = {
       name: input.name,
@@ -72,7 +81,9 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
     }
 
+    console.log('正在插入数据...')
     const result = await collection.insertOne(newClothing)
+    console.log('插入成功，ID:', result.insertedId.toString())
 
     return NextResponse.json({
       success: true,
@@ -82,9 +93,10 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('添加衣服失败:', error)
+    console.error('添加衣服失败 - 详细错误:', error)
+    console.error('错误堆栈:', error instanceof Error ? error.stack : 'no stack')
     return NextResponse.json(
-      { error: '添加衣服失败' },
+      { error: `添加衣服失败: ${error instanceof Error ? error.message : '未知错误'}` },
       { status: 500 }
     )
   }
