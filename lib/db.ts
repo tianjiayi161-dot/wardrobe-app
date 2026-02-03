@@ -8,6 +8,8 @@ const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017'
 const options = {
   serverSelectionTimeoutMS: 10000, // 10秒超时
   socketTimeoutMS: 45000, // 45秒socket超时
+  retryWrites: true,
+  w: 'majority',
 }
 
 let client: MongoClient
