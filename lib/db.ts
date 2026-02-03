@@ -1,10 +1,10 @@
 import { MongoClient, Db } from 'mongodb'
 
 if (!process.env.MONGODB_URI) {
-  throw new Error('请在.env.local中配置MONGODB_URI环境变量')
+  console.error('⚠️  MONGODB_URI环境变量未配置')
 }
 
-const uri = process.env.MONGODB_URI
+const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017'
 const options = {}
 
 let client: MongoClient
