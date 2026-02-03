@@ -64,6 +64,151 @@ export async function analyzeClothingImage(
   }
 }
 
+// 增强版AI分析（更准确的颜色和款式识别）
+export async function analyzeClothingImageEnhanced(
+  imageBase64: string,
+  mimeType: string = 'image/jpeg'
+): Promise<GeminiAnalysisResult> {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: 'gemini-2.0-flash-exp',
+      generationConfig: {
+        temperature: 0.2, // 降低温度提高一致性
+        topK: 40,
+        topP: 0.95,
+      },
+    })
+
+    // 第一轮：详细观察
+    const observationPrompt = `You are a professional fashion analyst. Carefully examine this clothing item and describe:
+1. The exact type of garment (be specific: t-shirt, dress shirt, jeans, etc.)
+2. All visible colors (be precise with color names, note any patterns)
+3. Fabric texture and material characteristics
+4. Key style elements (collar type, sleeve length, cut, fit)
+5. Any distinctive features or patterns
+
+Provide a detailed observation in clear, structured format.`
+
+    const step1 = await model.generateContent([
+      { inlineData: { data: imageBase64.replace(/^data:image\/\w+;base64,/, ''), mimeType } },
+      observationPrompt,
+    ])
+
+    const observation = step1.response.text()
+
+    // 第二轮：结构化分类
+    const classificationPrompt = `Based on this observation:
+${observation}
+
+Now classify the clothing item into this exact JSON structure:
+{
+  "category": "选择一个: top/bottom/outerwear/shoes/accessory",
+  "colors": ["主要颜色（最多3个，使用精确的英文颜色名）"],
+  "style": ["风格标签，从这些选择: casual, formal, sport, elegant, vintage, street, minimalist, preppy"],
+  "season": ["适合的季节: spring, summer, fall, winter（可多选）"],
+  "description": "简短的中文描述（包含款式、颜色、风格特点）"
+}
+
+分类规则：
+- category:
+  * top: T恤、衬衫、毛衣、背心等上身衣物
+  * bottom: 裤子、裙子、短裤等下身衣物
+  * outerwear: 外套、夹克、大衣等
+  * shoes: 所有鞋类
+  * accessory: 帽子、围巾、包等配饰
+
+- colors: 使用标准色彩名（如navy blue, light gray, burgundy等），按从主到次排列
+
+- style: 可多选，根据实际特征判断：
+  * casual: 日常休闲风格
+  * formal: 正式商务场合
+  * sport: 运动风格
+  * elegant: 优雅精致
+  * vintage: 复古风
+  * street: 街头潮流
+  * minimalist: 极简主义
+  * preppy: 学院风
+
+- season: 根据面料厚度、袖长判断：
+  * 薄款、短袖: spring, summer
+  * 中等厚度、长袖: spring, fall
+  * 厚款、保暖: fall, winter
+
+IMPORTANT: 只返回JSON，不要任何其他文字。`
+
+    const step2 = await model.generateContent(classificationPrompt)
+    const response = step2.response.text()
+
+    // 提取JSON
+    const jsonMatch = response.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      throw new Error('无法解析分析结果')
+    }
+
+    const analysis: GeminiAnalysisResult = JSON.parse(jsonMatch[0])
+
+    // 标准化颜色名称到预定义集合
+    analysis.colors = normalizeColors(analysis.colors)
+
+    return analysis
+  } catch (error) {
+    console.error('增强分析失败:', error)
+    // 降级到基础分析
+    return analyzeClothingImage(imageBase64, mimeType)
+  }
+}
+
+/**
+ * 颜色标准化函数：将细分颜色映射到标准色系
+ */
+function normalizeColors(colors: string[]): string[] {
+  const colorMapping: Record<string, string> = {
+    'navy': 'blue',
+    'navy blue': 'blue',
+    'light blue': 'blue',
+    'dark blue': 'blue',
+    'sky blue': 'blue',
+    'beige': 'brown',
+    'tan': 'brown',
+    'khaki': 'brown',
+    'burgundy': 'red',
+    'crimson': 'red',
+    'maroon': 'red',
+    'charcoal': 'gray',
+    'silver': 'gray',
+    'off-white': 'white',
+    'cream': 'white',
+    'ivory': 'white',
+    'lavender': 'purple',
+    'violet': 'purple',
+    'olive': 'green',
+    'lime': 'green',
+    'mint': 'green',
+    'coral': 'orange',
+    'peach': 'orange',
+    'rose': 'pink',
+    'magenta': 'pink',
+  }
+
+  const standardColors = ['red', 'blue', 'green', 'yellow', 'black', 'white', 'gray', 'brown', 'pink', 'purple', 'orange']
+
+  return colors
+    .map((color) => {
+      const lowerColor = color.toLowerCase().trim()
+      // 如果有映射，使用映射值
+      if (colorMapping[lowerColor]) return colorMapping[lowerColor]
+      // 如果已是标准颜色，直接返回
+      if (standardColors.includes(lowerColor)) return lowerColor
+      // 尝试部分匹配
+      for (const std of standardColors) {
+        if (lowerColor.includes(std)) return std
+      }
+      return lowerColor
+    })
+    .filter((color, index, self) => self.indexOf(color) === index) // 去重
+    .slice(0, 3) // 最多3个颜色
+}
+
 // 使用Gemini生成搭配推荐
 export async function generateOutfitRecommendations(
   clothes: Clothing[],
