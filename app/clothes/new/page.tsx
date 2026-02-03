@@ -14,7 +14,7 @@ export default function NewClothingPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    category: 'top' as const,
+    category: 'top' as 'top' | 'bottom' | 'outerwear' | 'shoes' | 'accessory',
     colors: [] as string[],
     season: [] as string[],
     style: [] as string[],

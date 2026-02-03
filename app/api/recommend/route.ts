@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
       _id: c._id.toString(),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
-    }))
+    } as Clothing))
 
     // 使用Gemini生成推荐
     const recommendations = await generateOutfitRecommendations(
