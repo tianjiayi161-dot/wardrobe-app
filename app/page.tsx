@@ -1,5 +1,6 @@
 'use client'
 
+// 主页组件
 import { useState } from 'react'
 import Link from 'next/link'
 import { AIRecommendation } from '@/types'
