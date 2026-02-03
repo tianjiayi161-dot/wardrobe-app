@@ -9,7 +9,7 @@ const options = {
   serverSelectionTimeoutMS: 10000, // 10秒超时
   socketTimeoutMS: 45000, // 45秒socket超时
   retryWrites: true,
-  w: 'majority',
+  w: 'majority' as const,
 }
 
 let client: MongoClient
