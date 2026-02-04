@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCollection } from '@/lib/db'
 import { generateOutfitRecommendations } from '@/lib/qwen'
+import { normalizeCategory } from '@/lib/utils'
 import { Clothing, AIRecommendation } from '@/types'
 
 type ClothingCategory = Clothing['category']
@@ -11,7 +12,6 @@ const TOP_CATEGORIES: ClothingCategory[] = [
   'knit',
   'sweatshirt',
   'camisole',
-  'top',
 ]
 
 const FULL_OUTFIT_CATEGORIES: ClothingCategory[] = [
@@ -39,8 +39,6 @@ function buildCategoryIndex(clothes: Clothing[]) {
     innerwear: [],
     homewear: [],
     sportswear: [],
-    top: [],
-    bottom: [],
   }
 
   for (const item of clothes) {
@@ -165,6 +163,7 @@ export async function POST(request: NextRequest) {
     const formattedClothes: Clothing[] = clothes.map((c) => ({
       ...c,
       _id: c._id.toString(),
+      category: normalizeCategory(c.category),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     } as Clothing))

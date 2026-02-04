@@ -22,8 +22,6 @@ const CATEGORY_ORDER: Clothing['category'][] = [
   'innerwear',
   'homewear',
   'sportswear',
-  'top',
-  'bottom',
 ]
 
 export default function ClothesPage() {
@@ -113,8 +111,6 @@ export default function ClothesPage() {
       innerwear: [],
       homewear: [],
       sportswear: [],
-      top: [],
-      bottom: [],
     }
 
     for (const item of clothes) {

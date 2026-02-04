@@ -12,7 +12,6 @@ const TOP_CATEGORIES: Clothing['category'][] = [
   'knit',
   'sweatshirt',
   'camisole',
-  'top',
 ]
 
 const REQUIRED_CATEGORIES: Clothing['category'][] = [

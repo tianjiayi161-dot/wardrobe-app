@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Clothing, Outfit } from '@/types'
 import { categoryMap, formatDate } from '@/lib/utils'
 
@@ -31,6 +32,12 @@ export default function HomePage() {
 
     fetchData()
   }, [])
+
+  const clothingMap = useMemo(() => {
+    const map = new Map<string, Clothing>()
+    clothes.forEach((item) => map.set(item._id, item))
+    return map
+  }, [clothes])
 
   return (
     <div className="space-y-10">
@@ -68,21 +75,24 @@ export default function HomePage() {
             {clothes.length === 0 ? (
               <p className="text-sm text-gray-500">还没有添加衣服</p>
             ) : (
-              <div className="space-y-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {clothes.slice(0, 6).map((item) => (
-                  <div
-                    key={item._id}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {item.name}
-                      </div>
-                      <div className="text-gray-500">
-                        {categoryMap[item.category] || item.category}
-                      </div>
+                  <div key={item._id} className="space-y-2">
+                    <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                      <Image
+                        src={item.thumbnail}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
                     </div>
-                    <div className="text-gray-400">
+                    <div className="text-sm font-medium text-gray-900 truncate">
+                      {item.name}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {categoryMap[item.category] || item.category}
+                    </div>
+                    <div className="text-xs text-gray-400">
                       {formatDate(item.createdAt)}
                     </div>
                   </div>
@@ -104,25 +114,41 @@ export default function HomePage() {
             {outfits.length === 0 ? (
               <p className="text-sm text-gray-500">还没有创建搭配</p>
             ) : (
-              <div className="space-y-3">
-                {outfits.slice(0, 6).map((item) => (
-                  <div
-                    key={item._id}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <div>
-                      <div className="font-medium text-gray-900">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {outfits.slice(0, 6).map((item) => {
+                  const images = item.clothingIds
+                    .map((id) => clothingMap.get(id)?.thumbnail)
+                    .filter(Boolean)
+                    .slice(0, 3) as string[]
+
+                  return (
+                    <div key={item._id} className="space-y-2">
+                      <div className="grid grid-cols-3 gap-1">
+                        {images.length > 0 ? (
+                          images.map((src, index) => (
+                            <div
+                              key={index}
+                              className="relative aspect-square rounded-md overflow-hidden border border-gray-200 bg-gray-50"
+                            >
+                              <Image src={src} alt={item.name} fill className="object-cover" />
+                            </div>
+                          ))
+                        ) : (
+                          <div className="col-span-3 aspect-square rounded-md border border-gray-200 bg-gray-50" />
+                        )}
+                      </div>
+                      <div className="text-sm font-medium text-gray-900 truncate">
                         {item.name}
                       </div>
-                      <div className="text-gray-500">
+                      <div className="text-xs text-gray-500">
                         {item.clothingIds.length} 件衣服
                       </div>
+                      <div className="text-xs text-gray-400">
+                        {formatDate(item.createdAt)}
+                      </div>
                     </div>
-                    <div className="text-gray-400">
-                      {formatDate(item.createdAt)}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </section>

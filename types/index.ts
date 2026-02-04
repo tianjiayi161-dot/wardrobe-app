@@ -18,8 +18,6 @@ export interface Clothing {
     | 'innerwear'
     | 'homewear'
     | 'sportswear'
-    | 'top'
-    | 'bottom'
   colors: string[]  // 主要颜色标签
   season: string[]  // ['spring', 'summer', 'fall', 'winter']
   style: string[]   // ['casual', 'formal', 'sport']
@@ -52,8 +50,6 @@ export interface CreateClothingInput {
     | 'innerwear'
     | 'homewear'
     | 'sportswear'
-    | 'top'
-    | 'bottom'
   colors: string[]
   season: string[]
   style: string[]
@@ -107,8 +103,6 @@ export interface GeminiAnalysisResult {
     | 'innerwear'
     | 'homewear'
     | 'sportswear'
-    | 'top'
-    | 'bottom'
   colors: string[]
   style: string[]
   season: string[]

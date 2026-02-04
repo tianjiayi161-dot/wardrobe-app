@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from 'clsx'
+import type { Clothing } from '@/types'
 import { twMerge } from 'tailwind-merge'
 
 export function cn(...inputs: ClassValue[]) {
@@ -57,8 +58,13 @@ export const categoryMap: Record<string, string> = {
   innerwear: '内衣',
   homewear: '家居服',
   sportswear: '运动服',
-  top: '上装（旧）',
-  bottom: '下装（旧）',
+}
+
+// 兼容旧分类：top/bottom -> 新分类
+export function normalizeCategory(category: string): Clothing['category'] {
+  if (category === 'top') return 'tshirt'
+  if (category === 'bottom') return 'bottom_pants'
+  return category as Clothing['category']
 }
 
 // 季节的中文映射

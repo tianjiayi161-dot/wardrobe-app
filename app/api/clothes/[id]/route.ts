@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCollection } from '@/lib/db'
 import { deleteFromOSS } from '@/lib/oss'
+import { normalizeCategory } from '@/lib/utils'
 import { ObjectId } from 'mongodb'
 
 // GET - 获取单个衣服详情
@@ -26,6 +27,7 @@ export async function GET(
       clothing: {
         ...clothing,
         _id: clothing._id.toString(),
+        category: normalizeCategory(clothing.category),
       },
     })
   } catch (error) {

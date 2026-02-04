@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCollection } from '@/lib/db'
 import { CreateClothingInput } from '@/types'
+import { normalizeCategory } from '@/lib/utils'
 import { ObjectId } from 'mongodb'
 
 // GET - 获取所有衣服
@@ -26,6 +27,7 @@ export async function GET(request: NextRequest) {
     const formattedClothes = clothes.map((item) => ({
       ...item,
       _id: item._id.toString(),
+      category: normalizeCategory(item.category),
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     }))
