@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { GeminiAnalysisResult } from '@/types'
@@ -11,7 +11,7 @@ type AnalysisMode = 'fast' | 'enhanced' | 'assist'
 
 type Category = (typeof CATEGORY_OPTIONS)[number]
 
-export default function NewClothingPage() {
+function NewClothingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get('category')
@@ -507,5 +507,22 @@ export default function NewClothingPage() {
         </div>
       </form>
     </div>
+  )
+}
+
+export default function NewClothingPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-2xl mx-auto space-y-6">
+          <h1 className="text-3xl font-bold text-gray-900">添加衣服</h1>
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <p className="text-gray-500">页面加载中...</p>
+          </div>
+        </div>
+      }
+    >
+      <NewClothingForm />
+    </Suspense>
   )
 }
