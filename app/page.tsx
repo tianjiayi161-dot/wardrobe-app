@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clothing, Outfit } from '@/types'
@@ -10,6 +10,7 @@ export default function HomePage() {
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [loading, setLoading] = useState(true)
+  const longPressRef = useRef<number | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,11 +40,58 @@ export default function HomePage() {
     return map
   }, [clothes])
 
+  const cancelLongPress = () => {
+    if (longPressRef.current) {
+      window.clearTimeout(longPressRef.current)
+      longPressRef.current = null
+    }
+  }
+
+  const startLongPress = (action: () => void) => {
+    cancelLongPress()
+    longPressRef.current = window.setTimeout(() => {
+      action()
+      longPressRef.current = null
+    }, 600)
+  }
+
+  const deleteClothing = async (id: string) => {
+    if (!confirm('确定要删除这件衣服吗？')) return
+    try {
+      const response = await fetch(`/api/clothes/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (data.success) {
+        setClothes((prev) => prev.filter((item) => item._id !== id))
+      } else {
+        alert(data.error || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除衣服失败:', error)
+      alert('删除失败，请稍后重试')
+    }
+  }
+
+  const deleteOutfit = async (id: string) => {
+    if (!confirm('确定要删除这套搭配吗？')) return
+    try {
+      const response = await fetch(`/api/outfits/${id}`, { method: 'DELETE' })
+      const data = await response.json()
+      if (data.success) {
+        setOutfits((prev) => prev.filter((item) => item._id !== id))
+      } else {
+        alert(data.error || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除搭配失败:', error)
+      alert('删除失败，请稍后重试')
+    }
+  }
+
   return (
     <div className="space-y-10">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">电子衣橱</h1>
+          <h1 className="text-3xl font-bold text-gray-900">What2Wear</h1>
           <p className="text-sm text-gray-600 mt-1">
             按时间顺序展示最近添加的衣服和搭配。
           </p>
@@ -77,7 +125,17 @@ export default function HomePage() {
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {clothes.slice(0, 6).map((item) => (
-                  <div key={item._id} className="space-y-2">
+                  <div
+                    key={item._id}
+                    className="space-y-2"
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      deleteClothing(item._id)
+                    }}
+                    onTouchStart={() => startLongPress(() => deleteClothing(item._id))}
+                    onTouchEnd={cancelLongPress}
+                    onTouchMove={cancelLongPress}
+                  >
                     <div className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
                       <Image
                         src={item.thumbnail}
@@ -122,7 +180,17 @@ export default function HomePage() {
                     .slice(0, 3) as string[]
 
                   return (
-                    <div key={item._id} className="space-y-2">
+                    <div
+                      key={item._id}
+                      className="space-y-2"
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                        deleteOutfit(item._id)
+                      }}
+                      onTouchStart={() => startLongPress(() => deleteOutfit(item._id))}
+                      onTouchEnd={cancelLongPress}
+                      onTouchMove={cancelLongPress}
+                    >
                       <div className="grid grid-cols-3 gap-1">
                         {images.length > 0 ? (
                           images.map((src, index) => (
@@ -154,6 +222,27 @@ export default function HomePage() {
           </section>
         </div>
       )}
+
+      <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">穿搭日程</h2>
+          <Link
+            href="/planner"
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            进入日程
+          </Link>
+        </div>
+        <p className="text-sm text-gray-600">
+          规划每天要穿的衣服或搭配。
+        </p>
+        <Link
+          href="/planner"
+          className="inline-flex px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+        >
+          新建计划
+        </Link>
+      </section>
     </div>
   )
 }

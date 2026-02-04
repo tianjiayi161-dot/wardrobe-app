@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "电子衣橱",
+  title: "What2Wear",
   description: "智能衣橱管理与搭配推荐",
 };
 
@@ -32,7 +32,7 @@ export default function RootLayout({
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <Link href="/" className="text-xl font-bold text-gray-900">
-                电子衣橱
+                What2Wear
               </Link>
               <div className="flex space-x-6">
                 <Link
@@ -46,6 +46,12 @@ export default function RootLayout({
                   className="text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   我的搭配
+                </Link>
+                <Link
+                  href="/planner"
+                  className="text-gray-700 hover:text-gray-900 transition-colors"
+                >
+                  穿搭日程
                 </Link>
               </div>
             </div>
