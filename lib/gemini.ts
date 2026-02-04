@@ -13,7 +13,7 @@ export async function analyzeClothingImage(
   mimeType: string = 'image/jpeg'
 ): Promise<GeminiAnalysisResult> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-001' })
 
     const prompt = `请分析这张衣服图片，并以JSON格式返回以下信息：
 {
@@ -71,7 +71,7 @@ export async function analyzeClothingImageEnhanced(
 ): Promise<GeminiAnalysisResult> {
   try {
     const model = genAI.getGenerativeModel({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-2.0-flash-001',
       generationConfig: {
         temperature: 0.2, // 降低温度提高一致性
         topK: 40,
@@ -215,7 +215,7 @@ export async function generateOutfitRecommendations(
   count: number = 3
 ): Promise<AIRecommendation[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-001' })
 
     const clothesDescription = clothes.map((c, idx) =>
       `${idx + 1}. ${c.name} (ID:${c._id}, 类别:${c.category}, 颜色:${c.colors.join(',')}, 风格:${c.style.join(',')})`
