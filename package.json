@@ -6,12 +6,15 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate": "node scripts/migrate-add-users.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "ali-oss": "^6.23.0",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.0.0",
     "next": "16.1.6",
     "openai": "^6.17.0",
@@ -24,6 +27,8 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/ali-oss": "^6.23.2",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

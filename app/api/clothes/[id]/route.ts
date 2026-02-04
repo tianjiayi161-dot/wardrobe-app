@@ -10,14 +10,24 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 从 middleware 获取 userId
+    const userId = request.headers.get('x-user-id')
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
     const collection = await getCollection('clothes')
 
-    const clothing = await collection.findOne({ _id: new ObjectId(id) })
+    // 验证所有权：查询时同时匹配 id 和 userId
+    const clothing = await collection.findOne({
+      _id: new ObjectId(id),
+      userId: new ObjectId(userId)
+    })
 
     if (!clothing) {
       return NextResponse.json(
-        { error: '衣服不存在' },
+        { error: '衣服不存在或无权访问' },
         { status: 404 }
       )
     }
@@ -27,6 +37,7 @@ export async function GET(
       clothing: {
         ...clothing,
         _id: clothing._id.toString(),
+        userId: clothing.userId.toString(),
         category: normalizeCategory(clothing.category),
       },
     })
@@ -45,12 +56,22 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 从 middleware 获取 userId
+    const userId = request.headers.get('x-user-id')
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
     const updates = await request.json()
     const collection = await getCollection('clothes')
 
+    // 验证所有权：更新时同时匹配 id 和 userId
     const result = await collection.findOneAndUpdate(
-      { _id: new ObjectId(id) },
+      {
+        _id: new ObjectId(id),
+        userId: new ObjectId(userId)
+      },
       {
         $set: {
           ...updates,
@@ -62,7 +83,7 @@ export async function PUT(
 
     if (!result) {
       return NextResponse.json(
-        { error: '衣服不存在' },
+        { error: '衣服不存在或无权修改' },
         { status: 404 }
       )
     }
@@ -72,6 +93,7 @@ export async function PUT(
       clothing: {
         ...result,
         _id: result._id.toString(),
+        userId: result.userId.toString(),
       },
     })
   } catch (error) {
@@ -89,21 +111,33 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // 从 middleware 获取 userId
+    const userId = request.headers.get('x-user-id')
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { id } = await params
     const collection = await getCollection('clothes')
 
-    // 先获取衣服信息（用于删除OSS图片）
-    const clothing = await collection.findOne({ _id: new ObjectId(id) })
+    // 验证所有权：先获取衣服信息（用于删除OSS图片）
+    const clothing = await collection.findOne({
+      _id: new ObjectId(id),
+      userId: new ObjectId(userId)
+    })
 
     if (!clothing) {
       return NextResponse.json(
-        { error: '衣服不存在' },
+        { error: '衣服不存在或无权删除' },
         { status: 404 }
       )
     }
 
     // 删除数据库记录
-    await collection.deleteOne({ _id: new ObjectId(id) })
+    await collection.deleteOne({
+      _id: new ObjectId(id),
+      userId: new ObjectId(userId)
+    })
 
     // 尝试删除OSS图片（失败不影响整体流程）
     try {

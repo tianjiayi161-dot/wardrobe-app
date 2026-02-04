@@ -3,6 +3,7 @@ import { getCollection } from '@/lib/db'
 import { generateOutfitRecommendations } from '@/lib/qwen'
 import { normalizeCategory } from '@/lib/utils'
 import { Clothing, AIRecommendation } from '@/types'
+import { ObjectId } from 'mongodb'
 
 type ClothingCategory = Clothing['category']
 
@@ -141,13 +142,21 @@ function normalizeRecommendations(
 
 export async function POST(request: NextRequest) {
   try {
+    // 从 middleware 获取 userId
+    const userId = request.headers.get('x-user-id')
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const { count = 3 } = await request.json()
 
-    console.log('开始生成搭配推荐，数量:', count)
+    console.log('开始生成搭配推荐，数量:', count, 'userId:', userId)
 
-    // 获取所有衣服
+    // 获取当前用户的所有衣服
     const collection = await getCollection('clothes')
-    const clothes = await collection.find({}).toArray()
+    const clothes = await collection.find({
+      userId: new ObjectId(userId)
+    }).toArray()
 
     console.log('衣橱中的衣服数量:', clothes.length)
 
@@ -163,6 +172,7 @@ export async function POST(request: NextRequest) {
     const formattedClothes: Clothing[] = clothes.map((c) => ({
       ...c,
       _id: c._id.toString(),
+      userId: c.userId.toString(),
       category: normalizeCategory(c.category),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,

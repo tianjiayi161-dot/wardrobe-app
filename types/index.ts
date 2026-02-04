@@ -1,6 +1,7 @@
 // 衣服类型定义
 export interface Clothing {
   _id: string
+  userId: string  // 用户ID
   name: string
   category:
     | 'tshirt'
@@ -64,6 +65,7 @@ export interface CreateClothingInput {
 // 搭配类型定义
 export interface Outfit {
   _id: string
+  userId: string  // 用户ID
   name: string
   description?: string
   clothingIds: string[]  // 关联的衣服ID

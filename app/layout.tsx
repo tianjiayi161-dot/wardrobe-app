@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
+import { AuthProvider } from "@/lib/auth-context";
+import NavBar from "@/components/NavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,38 +29,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen`}
       >
-        <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <Link href="/" className="text-xl font-bold text-gray-900">
-                What2Wear
-              </Link>
-              <div className="flex space-x-6">
-                <Link
-                  href="/clothes"
-                  className="text-gray-700 hover:text-gray-900 transition-colors"
-                >
-                  我的衣橱
-                </Link>
-                <Link
-                  href="/outfits"
-                  className="text-gray-700 hover:text-gray-900 transition-colors"
-                >
-                  我的搭配
-                </Link>
-                <Link
-                  href="/planner"
-                  className="text-gray-700 hover:text-gray-900 transition-colors"
-                >
-                  穿搭日程
-                </Link>
-              </div>
-            </div>
-          </div>
-        </nav>
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </main>
+        <AuthProvider>
+          <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+            <NavBar />
+          </nav>
+          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </main>
+        </AuthProvider>
       </body>
     </html>
   );
