@@ -87,7 +87,7 @@ export async function analyzeClothingImageEnhanced(
   mimeType: string = 'image/jpeg'
 ): Promise<GeminiAnalysisResult> {
   try {
-    // 第一轮：详细观察
+    // 第一轮：详细观察（使用视觉模型）
     const observation = await client.chat.completions.create({
       model: 'qwen-vl-max',
       messages: [
@@ -104,73 +104,107 @@ export async function analyzeClothingImageEnhanced(
             },
             {
               type: 'text',
-              text: `You are a professional fashion analyst. Carefully examine this clothing item and describe:
-1. The exact type of garment (be specific: t-shirt, dress shirt, jeans, etc.)
-2. All visible colors (be precise with color names, note any patterns)
-3. Fabric texture and material characteristics
-4. Key style elements (collar type, sleeve length, cut, fit)
-5. Any distinctive features or patterns
+              text: `你是专业的服装分析师。请非常仔细地观察这件衣服，并详细描述：
 
-Provide a detailed observation in clear, structured format.`,
+1. **衣服类型**（请非常具体）：
+   - 如果是上衣：T恤、衬衫、毛衣、卫衣、背心、吊带等
+   - 如果是下装：牛仔裤、休闲裤、西裤、短裤、半身裙、连衣裙等
+   - 如果是外套：夹克、大衣、风衣、羽绒服等
+   - 如果是鞋子：运动鞋、皮鞋、高跟鞋、靴子等
+
+2. **颜色分析**（非常重要，请精确识别）：
+   - 主色调是什么？（请使用精确的颜色名称）
+   - 有没有辅助色或图案颜色？
+   - 颜色的深浅程度（浅色/中等/深色）
+   - 常见颜色参考：黑色、白色、灰色、米色、卡其色、藏青色、深蓝色、浅蓝色、天蓝色、红色、酒红色、粉色、黄色、绿色、军绿色、橙色、紫色、棕色
+
+3. **面料和质感**：
+   - 面料类型（棉、麻、丝、针织、牛仔、皮革等）
+   - 厚薄程度
+   - 光泽度
+
+4. **款式细节**（越详细越好）：
+   - 领型：圆领、V领、翻领、高领、方领等
+   - 袖型：短袖、长袖、七分袖、无袖、泡泡袖等
+   - 版型：修身、宽松、oversize、直筒、A字等
+   - 长度：超短、短款、中长、长款等
+   - 特殊设计：印花图案、刺绣、拼接、破洞、褶皱等
+
+5. **风格特征**：
+   - 这件衣服给人的整体感觉（休闲、正式、运动、优雅、街头、复古等）
+   - 适合什么场合穿着
+
+请用结构化的方式详细描述，越详细越好。`,
             },
           ],
         },
       ],
-      temperature: 0.2,
+      temperature: 0.1, // 降低温度以获得更一致的结果
     })
 
     const observationText = observation.choices[0]?.message?.content || ''
+    console.log('AI观察结果:', observationText)
 
-    // 第二轮：结构化分类
+    // 第二轮：结构化分类（使用文本模型）
     const classification = await client.chat.completions.create({
       model: 'qwen-plus',
       messages: [
         {
           role: 'user',
-          content: `Based on this observation:
+          content: `基于以下详细观察结果，请将衣服分类为标准JSON格式：
+
+观察结果：
 ${observationText}
 
-Now classify the clothing item into this exact JSON structure:
+请返回以下JSON结构（只返回JSON，不要任何其他文字）：
 {
-  "category": "选择一个: top/bottom/outerwear/shoes/accessory",
-  "colors": ["主要颜色（最多3个，使用精确的英文颜色名）"],
-  "style": ["风格标签，从这些选择: casual, formal, sport, elegant, vintage, street, minimalist, preppy"],
-  "season": ["适合的季节: spring, summer, fall, winter（可多选）"],
-  "description": "简短的中文描述（包含款式、颜色、风格特点）"
+  "category": "类别",
+  "colors": ["主要颜色1", "辅助颜色2"],
+  "style": ["风格标签1", "风格标签2"],
+  "season": ["适合季节1", "适合季节2"],
+  "description": "简短的中文描述"
 }
 
-分类规则：
-- category:
-  * top: T恤、衬衫、毛衣、背心等上身衣物
-  * bottom: 裤子、裙子、短裤等下身衣物
-  * outerwear: 外套、夹克、大衣等
-  * shoes: 所有鞋类
-  * accessory: 帽子、围巾、包等配饰
+**分类规则（严格遵守）：**
 
-- colors: 使用标准色彩名（如navy blue, light gray, burgundy等），按从主到次排列
+1. category - 必须选择以下之一：
+   - "top": T恤、衬衫、毛衣、卫衣、背心、吊带等所有上身衣物
+   - "bottom": 裤子、短裤、裙子等所有下身衣物
+   - "outerwear": 外套、夹克、大衣、风衣、羽绒服等
+   - "shoes": 所有鞋类
+   - "accessory": 帽子、围巾、包包等配饰
 
-- style: 可多选，根据实际特征判断：
-  * casual: 日常休闲风格
-  * formal: 正式商务场合
-  * sport: 运动风格
-  * elegant: 优雅精致
-  * vintage: 复古风
-  * street: 街头潮流
-  * minimalist: 极简主义
-  * preppy: 学院风
+2. colors - 使用标准中文颜色名（最多3个，按重要性排序）：
+   标准颜色：黑色、白色、灰色、米色、卡其色、藏青色、蓝色、浅蓝色、红色、粉色、黄色、绿色、橙色、紫色、棕色
 
-- season: 根据面料厚度、袖长判断：
-  * 薄款、短袖: spring, summer
-  * 中等厚度、长袖: spring, fall
-  * 厚款、保暖: fall, winter
+3. style - 选择最贴切的风格标签（1-3个）：
+   - "casual": 日常休闲、舒适随意
+   - "formal": 正式、商务、职业
+   - "sport": 运动、健身
+   - "elegant": 优雅、精致、淑女
+   - "vintage": 复古、怀旧
+   - "street": 街头、潮流、嘻哈
+   - "minimalist": 极简、性冷淡风
+   - "preppy": 学院风、清新
 
-IMPORTANT: 只返回JSON，不要任何其他文字。`,
+4. season - 根据面料厚度判断（可多选）：
+   - 薄款、短袖、透气: ["spring", "summer"]
+   - 中等厚度、长袖: ["spring", "fall"]
+   - 厚款、保暖: ["fall", "winter"]
+   - 四季通用: ["spring", "summer", "fall", "winter"]
+
+5. description - 用一句话描述（15-30字）：
+   格式："{颜色}{款式}{类型}，{风格}，适合{场合}"
+   例如："深蓝色修身牛仔裤，休闲百搭，适合日常穿着"
+
+IMPORTANT: 只返回JSON格式，不要添加任何解释文字。`,
         },
       ],
       temperature: 0.2,
     })
 
     const response = classification.choices[0]?.message?.content || ''
+    console.log('AI分类结果:', response)
 
     // 提取JSON
     const jsonMatch = response.match(/\{[\s\S]*\}/)
