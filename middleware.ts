@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose'
 const publicRoutes = ['/login', '/register']
 
 // API routes that don't require authentication
-const publicApiRoutes = ['/api/auth/login', '/api/auth/register']
+const publicApiRoutes = ['/api/auth/login', '/api/auth/register', '/api/debug/users']
 
 // Verify JWT token using jose (Edge Runtime compatible)
 async function verifyToken(token: string): Promise<{ userId: string } | null> {
