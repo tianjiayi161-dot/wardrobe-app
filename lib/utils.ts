@@ -44,9 +44,16 @@ export const colorMap: Record<string, string> = {
 export const categoryMap: Record<string, string> = {
   top: '上装',
   bottom: '下装',
+  bottom_pants: '裤装',
+  bottom_skirt: '裙装',
+  dress: '连衣裙',
   outerwear: '外套',
   shoes: '鞋子',
   accessory: '配饰',
+  set: '套装',
+  innerwear: '内衣',
+  homewear: '家居服',
+  sportswear: '运动服',
 }
 
 // 季节的中文映射

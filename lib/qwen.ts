@@ -37,7 +37,7 @@ export async function analyzeClothingImage(
               type: 'text',
               text: `请分析这张衣服图片，并以JSON格式返回以下信息：
 {
-  "category": "类别（top/bottom/outerwear/shoes/accessory之一）",
+  "category": "类别（top/bottom_pants/bottom_skirt/dress/outerwear/shoes/accessory/set/innerwear/homewear/sportswear之一）",
   "colors": ["主要颜色1", "主要颜色2"],
   "style": ["风格标签，如casual/formal/sport等"],
   "season": ["适合的季节，如spring/summer/fall/winter"],
@@ -45,7 +45,7 @@ export async function analyzeClothingImage(
 }
 
 注意：
-- category必须是以下之一：top（上装）, bottom（下装）, outerwear（外套）, shoes（鞋子）, accessory（配饰）
+- category必须是以下之一：top（上装）, bottom_pants（裤装）, bottom_skirt（裙装）, dress（连衣裙）, outerwear（外套）, shoes（鞋子）, accessory（配饰）, set（套装）, innerwear（内衣）, homewear（家居服）, sportswear（运动服）
 - colors用英文单词，如red, blue, black, white等
 - style可以是：casual, formal, sport, elegant, vintage, street
 - season可以是：spring, summer, fall, winter
@@ -107,10 +107,13 @@ export async function analyzeClothingImageEnhanced(
               text: `你是专业的服装分析师。请非常仔细地观察这件衣服，并详细描述：
 
 1. **衣服类型**（请非常具体）：
-   - 如果是上衣：T恤、衬衫、毛衣、卫衣、背心、吊带等
-   - 如果是下装：牛仔裤、休闲裤、西裤、短裤、半身裙、连衣裙等
-   - 如果是外套：夹克、大衣、风衣、羽绒服等
-   - 如果是鞋子：运动鞋、皮鞋、高跟鞋、靴子等
+   - 上装：T恤、衬衫、毛衣、卫衣、背心、吊带等
+   - 下装：裤装（牛仔裤、休闲裤、西裤、短裤等）、裙装（半身裙等）
+   - 连衣裙：连衣裙、吊带裙等
+   - 外套：夹克、大衣、风衣、羽绒服等
+   - 鞋子：运动鞋、皮鞋、高跟鞋、靴子等
+   - 套装/运动服/家居服：成套或功能性服装
+   - 内衣：内衣、内裤、打底等
 
 2. **颜色分析**（非常重要，请精确识别）：
    - 主色调是什么？（请使用精确的颜色名称）
@@ -169,10 +172,16 @@ ${observationText}
 
 1. category - 必须选择以下之一：
    - "top": T恤、衬衫、毛衣、卫衣、背心、吊带等所有上身衣物
-   - "bottom": 裤子、短裤、裙子等所有下身衣物
+   - "bottom_pants": 裤子、短裤等所有裤装
+   - "bottom_skirt": 半身裙等所有裙装
+   - "dress": 连衣裙、吊带裙等
    - "outerwear": 外套、夹克、大衣、风衣、羽绒服等
    - "shoes": 所有鞋类
    - "accessory": 帽子、围巾、包包等配饰
+   - "set": 成套搭配（上下装成套）
+   - "innerwear": 内衣、打底
+   - "homewear": 家居服/睡衣
+   - "sportswear": 运动服
 
 2. colors - 使用标准中文颜色名（最多3个，按重要性排序）：
    标准颜色：黑色、白色、灰色、米色、卡其色、藏青色、蓝色、浅蓝色、红色、粉色、黄色、绿色、橙色、紫色、棕色
@@ -319,7 +328,10 @@ export async function generateOutfitRecommendations(
           content: `我有以下衣服：
 ${clothesDescription}
 
-请根据这些衣服，推荐${count}套搭配方案。每套搭配应尽量完整：包含上装+下装的合理组合；如果衣橱中有鞋子/配饰/外套，请尽量包含（若某类别不存在则无需强行补齐）。
+请根据这些衣服，推荐${count}套搭配方案。每套搭配应尽量完整：
+- 若使用连衣裙/套装/运动服/家居服，可视为完成上装+下装
+- 否则应包含上装+下装（裤装或裙装）
+- 如果衣橱中有鞋子/配饰/外套，请尽量包含（若某类别不存在则无需强行补齐）。
 
 请以JSON数组格式返回，每个搭配包含：
 [

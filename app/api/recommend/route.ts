@@ -5,16 +5,30 @@ import { Clothing, AIRecommendation } from '@/types'
 
 type ClothingCategory = Clothing['category']
 
-const REQUIRED_CATEGORIES: ClothingCategory[] = ['top', 'bottom', 'shoes', 'accessory']
+const REQUIRED_CATEGORIES: ClothingCategory[] = ['top', 'bottom', 'bottom_pants', 'bottom_skirt', 'shoes', 'accessory']
+
+const FULL_OUTFIT_CATEGORIES: ClothingCategory[] = [
+  'dress',
+  'set',
+  'sportswear',
+  'homewear',
+]
 
 function buildCategoryIndex(clothes: Clothing[]) {
   const byId = new Map<string, Clothing>()
   const byCategory: Record<ClothingCategory, Clothing[]> = {
     top: [],
     bottom: [],
+    bottom_pants: [],
+    bottom_skirt: [],
+    dress: [],
     outerwear: [],
     shoes: [],
     accessory: [],
+    set: [],
+    innerwear: [],
+    homewear: [],
+    sportswear: [],
   }
 
   for (const item of clothes) {
@@ -44,11 +58,18 @@ function ensureCompleteOutfit(
   const hasCategory = (cat: ClothingCategory) =>
     normalized.some((id) => byId.get(id)?.category === cat)
 
+  const hasFullOutfit = FULL_OUTFIT_CATEGORIES.some((cat) => hasCategory(cat))
+  const hasTop = hasCategory('top')
+  const hasBottom =
+    hasCategory('bottom') ||
+    hasCategory('bottom_pants') ||
+    hasCategory('bottom_skirt')
+
   const pickFromCategory = (cat: ClothingCategory) =>
     byCategory[cat].find((c) => !used.has(c._id))
 
-  for (const cat of REQUIRED_CATEGORIES) {
-    if (byCategory[cat].length === 0) continue
+  const ensureCategory = (cat: ClothingCategory) => {
+    if (byCategory[cat].length === 0) return
     if (!hasCategory(cat)) {
       const candidate = pickFromCategory(cat)
       if (candidate) {
@@ -57,6 +78,22 @@ function ensureCompleteOutfit(
       }
     }
   }
+
+  if (!hasFullOutfit) {
+    ensureCategory('top')
+    if (!hasBottom) {
+      if (byCategory.bottom_pants.length > 0) {
+        ensureCategory('bottom_pants')
+      } else if (byCategory.bottom_skirt.length > 0) {
+        ensureCategory('bottom_skirt')
+      } else {
+        ensureCategory('bottom')
+      }
+    }
+  }
+
+  ensureCategory('shoes')
+  ensureCategory('accessory')
 
   if (byCategory.outerwear.length > 0 && !hasCategory('outerwear')) {
     const candidate = pickFromCategory('outerwear')

@@ -2,7 +2,19 @@
 export interface Clothing {
   _id: string
   name: string
-  category: 'top' | 'bottom' | 'outerwear' | 'shoes' | 'accessory'
+  category:
+    | 'top'
+    | 'bottom'
+    | 'bottom_pants'
+    | 'bottom_skirt'
+    | 'dress'
+    | 'outerwear'
+    | 'shoes'
+    | 'accessory'
+    | 'set'
+    | 'innerwear'
+    | 'homewear'
+    | 'sportswear'
   colors: string[]  // 主要颜色标签
   season: string[]  // ['spring', 'summer', 'fall', 'winter']
   style: string[]   // ['casual', 'formal', 'sport']
@@ -19,7 +31,19 @@ export interface Clothing {
 // 创建衣服时的输入类型
 export interface CreateClothingInput {
   name: string
-  category: 'top' | 'bottom' | 'outerwear' | 'shoes' | 'accessory'
+  category:
+    | 'top'
+    | 'bottom'
+    | 'bottom_pants'
+    | 'bottom_skirt'
+    | 'dress'
+    | 'outerwear'
+    | 'shoes'
+    | 'accessory'
+    | 'set'
+    | 'innerwear'
+    | 'homewear'
+    | 'sportswear'
   colors: string[]
   season: string[]
   style: string[]
@@ -56,7 +80,19 @@ export interface CreateOutfitInput {
 
 // Gemini分析结果
 export interface GeminiAnalysisResult {
-  category: 'top' | 'bottom' | 'outerwear' | 'shoes' | 'accessory'
+  category:
+    | 'top'
+    | 'bottom'
+    | 'bottom_pants'
+    | 'bottom_skirt'
+    | 'dress'
+    | 'outerwear'
+    | 'shoes'
+    | 'accessory'
+    | 'set'
+    | 'innerwear'
+    | 'homewear'
+    | 'sportswear'
   colors: string[]
   style: string[]
   season: string[]

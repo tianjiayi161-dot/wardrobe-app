@@ -8,10 +8,17 @@ import { categoryMap, colorMap } from '@/lib/utils'
 
 const CATEGORY_ORDER: Clothing['category'][] = [
   'top',
-  'bottom',
+  'bottom_pants',
+  'bottom_skirt',
+  'dress',
   'outerwear',
   'shoes',
   'accessory',
+  'set',
+  'innerwear',
+  'homewear',
+  'sportswear',
+  'bottom',
 ]
 
 export default function ClothesPage() {
@@ -63,9 +70,16 @@ export default function ClothesPage() {
     const groups: Record<Clothing['category'], Clothing[]> = {
       top: [],
       bottom: [],
+      bottom_pants: [],
+      bottom_skirt: [],
+      dress: [],
       outerwear: [],
       shoes: [],
       accessory: [],
+      set: [],
+      innerwear: [],
+      homewear: [],
+      sportswear: [],
     }
 
     for (const item of clothes) {

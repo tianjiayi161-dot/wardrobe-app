@@ -6,7 +6,21 @@ import Image from 'next/image'
 import { Clothing } from '@/types'
 import { categoryMap } from '@/lib/utils'
 
-const REQUIRED_CATEGORIES: Clothing['category'][] = ['top', 'bottom', 'shoes', 'accessory']
+const REQUIRED_CATEGORIES: Clothing['category'][] = [
+  'top',
+  'bottom',
+  'bottom_pants',
+  'bottom_skirt',
+  'shoes',
+  'accessory',
+]
+
+const FULL_OUTFIT_CATEGORIES: Clothing['category'][] = [
+  'dress',
+  'set',
+  'sportswear',
+  'homewear',
+]
 
 export default function CreateOutfitPage() {
   const router = useRouter()
@@ -48,12 +62,37 @@ export default function CreateOutfitPage() {
     const available = REQUIRED_CATEGORIES.filter((cat) =>
       clothes.some((c) => c.category === cat)
     )
-    const selected = new Set(
-      selectedClothingIds
-        .map((id) => clothes.find((c) => c._id === id)?.category)
-        .filter(Boolean)
-    )
-    return available.filter((cat) => !selected.has(cat))
+    const selectedCategories = selectedClothingIds
+      .map((id) => clothes.find((c) => c._id === id)?.category)
+      .filter(Boolean) as Clothing['category'][]
+
+    const selected = new Set(selectedCategories)
+    const hasFullOutfit = FULL_OUTFIT_CATEGORIES.some((cat) => selected.has(cat))
+    const hasTop = selected.has('top')
+    const hasBottom =
+      selected.has('bottom') ||
+      selected.has('bottom_pants') ||
+      selected.has('bottom_skirt')
+
+    const missing: Clothing['category'][] = []
+
+    if (!hasFullOutfit) {
+      if (available.includes('top') && !hasTop) missing.push('top')
+      if (!hasBottom) {
+        if (available.includes('bottom_pants')) {
+          missing.push('bottom_pants')
+        } else if (available.includes('bottom_skirt')) {
+          missing.push('bottom_skirt')
+        } else if (available.includes('bottom')) {
+          missing.push('bottom')
+        }
+      }
+    }
+
+    if (available.includes('shoes') && !selected.has('shoes')) missing.push('shoes')
+    if (available.includes('accessory') && !selected.has('accessory')) missing.push('accessory')
+
+    return missing
   }, [clothes, selectedClothingIds])
 
   const handleSubmit = async (e: React.FormEvent) => {

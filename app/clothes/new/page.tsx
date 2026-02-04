@@ -5,7 +5,20 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { GeminiAnalysisResult } from '@/types'
 
-const CATEGORY_OPTIONS = ['top', 'bottom', 'outerwear', 'shoes', 'accessory'] as const
+const CATEGORY_OPTIONS = [
+  'top',
+  'bottom_pants',
+  'bottom_skirt',
+  'dress',
+  'outerwear',
+  'shoes',
+  'accessory',
+  'set',
+  'innerwear',
+  'homewear',
+  'sportswear',
+  'bottom',
+] as const
 
 type AnalysisMode = 'fast' | 'enhanced' | 'assist'
 
@@ -377,10 +390,17 @@ function NewClothingForm() {
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
           >
             <option value="top">上装</option>
-            <option value="bottom">下装</option>
+            <option value="bottom_pants">裤装</option>
+            <option value="bottom_skirt">裙装</option>
+            <option value="dress">连衣裙</option>
             <option value="outerwear">外套</option>
             <option value="shoes">鞋子</option>
             <option value="accessory">配饰</option>
+            <option value="set">套装</option>
+            <option value="innerwear">内衣</option>
+            <option value="homewear">家居服</option>
+            <option value="sportswear">运动服</option>
+            <option value="bottom">下装（旧）</option>
           </select>
         </div>
 

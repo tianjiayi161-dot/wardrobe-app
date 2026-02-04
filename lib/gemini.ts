@@ -17,7 +17,7 @@ export async function analyzeClothingImage(
 
     const prompt = `请分析这张衣服图片，并以JSON格式返回以下信息：
 {
-  "category": "类别（top/bottom/outerwear/shoes/accessory之一）",
+  "category": "类别（top/bottom_pants/bottom_skirt/dress/outerwear/shoes/accessory/set/innerwear/homewear/sportswear之一）",
   "colors": ["主要颜色1", "主要颜色2"],
   "style": ["风格标签，如casual/formal/sport等"],
   "season": ["适合的季节，如spring/summer/fall/winter"],
@@ -25,7 +25,7 @@ export async function analyzeClothingImage(
 }
 
 注意：
-- category必须是以下之一：top（上装）, bottom（下装）, outerwear（外套）, shoes（鞋子）, accessory（配饰）
+- category必须是以下之一：top（上装）, bottom_pants（裤装）, bottom_skirt（裙装）, dress（连衣裙）, outerwear（外套）, shoes（鞋子）, accessory（配饰）, set（套装）, innerwear（内衣）, homewear（家居服）, sportswear（运动服）
 - colors用英文单词，如red, blue, black, white等
 - style可以是：casual, formal, sport, elegant, vintage, street
 - season可以是：spring, summer, fall, winter
@@ -102,7 +102,7 @@ ${observation}
 
 Now classify the clothing item into this exact JSON structure:
 {
-  "category": "选择一个: top/bottom/outerwear/shoes/accessory",
+  "category": "选择一个: top/bottom_pants/bottom_skirt/dress/outerwear/shoes/accessory/set/innerwear/homewear/sportswear",
   "colors": ["主要颜色（最多3个，使用精确的英文颜色名）"],
   "style": ["风格标签，从这些选择: casual, formal, sport, elegant, vintage, street, minimalist, preppy"],
   "season": ["适合的季节: spring, summer, fall, winter（可多选）"],
@@ -112,10 +112,16 @@ Now classify the clothing item into this exact JSON structure:
 分类规则：
 - category:
   * top: T恤、衬衫、毛衣、背心等上身衣物
-  * bottom: 裤子、裙子、短裤等下身衣物
+  * bottom_pants: 裤子、短裤等裤装
+  * bottom_skirt: 半身裙等裙装
+  * dress: 连衣裙、吊带裙等
   * outerwear: 外套、夹克、大衣等
   * shoes: 所有鞋类
   * accessory: 帽子、围巾、包等配饰
+  * set: 成套搭配
+  * innerwear: 内衣、打底
+  * homewear: 家居服/睡衣
+  * sportswear: 运动服
 
 - colors: 使用标准色彩名（如navy blue, light gray, burgundy等），按从主到次排列
 
@@ -224,7 +230,10 @@ export async function generateOutfitRecommendations(
     const prompt = `我有以下衣服：
 ${clothesDescription}
 
-请根据这些衣服，推荐${count}套搭配方案。每套搭配应该包含上装、下装等合理组合。
+请根据这些衣服，推荐${count}套搭配方案。每套搭配应尽量完整：
+- 若使用连衣裙/套装/运动服/家居服，可视为完成上装+下装
+- 否则应包含上装+下装（裤装或裙装）
+- 如果衣橱中有鞋子/配饰/外套，请尽量包含（若某类别不存在则无需强行补齐）。
 
 请以JSON数组格式返回，每个搭配包含：
 [
