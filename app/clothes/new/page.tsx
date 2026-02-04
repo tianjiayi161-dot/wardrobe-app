@@ -21,6 +21,8 @@ export default function NewClothingPage() {
     imageUrl: '',
     thumbnail: '',
     tags: [] as string[],
+    brand: '',
+    price: undefined as number | undefined,
   })
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,10 +163,8 @@ export default function NewClothingPage() {
             onChange={handleImageChange}
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-gray-800"
             required
+            disabled={analyzing}
           />
-          {analyzing && (
-            <p className="text-sm text-blue-600">AI 识别中...</p>
-          )}
           {imagePreview && (
             <div className="relative w-full aspect-square max-w-sm mx-auto border rounded-lg overflow-hidden">
               <Image
@@ -173,6 +173,13 @@ export default function NewClothingPage() {
                 fill
                 className="object-cover"
               />
+              {analyzing && (
+                <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                  <p className="text-white font-medium text-lg">AI 识别中...</p>
+                  <p className="text-white text-sm mt-2">正在分析衣服款式、颜色和风格</p>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -283,6 +290,40 @@ export default function NewClothingPage() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* 品牌（可选） */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-900">
+            品牌 <span className="text-gray-500 text-xs">(可选)</span>
+          </label>
+          <input
+            type="text"
+            value={formData.brand}
+            onChange={(e) =>
+              setFormData({ ...formData, brand: e.target.value })
+            }
+            placeholder="例如：Uniqlo, Zara, Nike"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+          />
+        </div>
+
+        {/* 价格（可选） */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-900">
+            价格 <span className="text-gray-500 text-xs">(可选，单位：元)</span>
+          </label>
+          <input
+            type="number"
+            value={formData.price || ''}
+            onChange={(e) =>
+              setFormData({ ...formData, price: e.target.value ? Number(e.target.value) : undefined })
+            }
+            placeholder="例如：299"
+            min="0"
+            step="0.01"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+          />
         </div>
 
         {/* 提交按钮 */}

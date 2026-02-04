@@ -10,6 +10,8 @@ export interface Clothing {
   thumbnail: string // 缩略图URL
   tags: string[]    // 自定义标签
   wearCount: number // 穿着次数
+  brand?: string    // 品牌（可选）
+  price?: number    // 价格（可选）
   createdAt: Date
   updatedAt: Date
 }
@@ -24,6 +26,8 @@ export interface CreateClothingInput {
   imageUrl: string
   thumbnail: string
   tags?: string[]
+  brand?: string
+  price?: number
 }
 
 // 搭配类型定义

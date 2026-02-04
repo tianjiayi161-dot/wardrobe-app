@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
       thumbnail: input.thumbnail || input.imageUrl,
       tags: input.tags || [],
       wearCount: 0,
+      brand: input.brand || undefined,
+      price: input.price || undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     }
