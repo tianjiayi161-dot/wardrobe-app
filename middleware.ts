@@ -30,6 +30,11 @@ export async function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl
 
+    // Allow debug routes (temporarily for troubleshooting)
+    if (pathname.startsWith('/api/debug/')) {
+      return NextResponse.next()
+    }
+
     // Allow public routes
     if (publicRoutes.includes(pathname) || publicApiRoutes.includes(pathname)) {
       return NextResponse.next()
