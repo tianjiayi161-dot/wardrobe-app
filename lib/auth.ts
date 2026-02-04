@@ -47,7 +47,7 @@ export async function createSession(userId: string, token: string) {
 }
 
 export async function getUserFromToken(token: string) {
-  const payload = verifyToken(token)
+  const payload = await verifyToken(token)
   if (!payload) return null
 
   const users = await getCollection('users')
