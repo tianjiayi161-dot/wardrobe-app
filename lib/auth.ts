@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
+import { SignJWT, jwtVerify } from 'jose'
 import { getCollection } from './db'
 import { ObjectId } from 'mongodb'
 
@@ -15,13 +15,20 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
-export function generateToken(userId: string): string {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY })
+export async function generateToken(userId: string): Promise<string> {
+  const secret = new TextEncoder().encode(JWT_SECRET)
+  return await new SignJWT({ userId })
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime(TOKEN_EXPIRY)
+    .setIssuedAt()
+    .sign(secret)
 }
 
-export function verifyToken(token: string): { userId: string } | null {
+export async function verifyToken(token: string): Promise<{ userId: string } | null> {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string }
+    const secret = new TextEncoder().encode(JWT_SECRET)
+    const { payload } = await jwtVerify(token, secret)
+    return { userId: payload.userId as string }
   } catch {
     return null
   }

@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     const userId = result.insertedId.toString()
 
     // Generate token and create session
-    const token = generateToken(userId)
+    const token = await generateToken(userId)
     await createSession(userId, token)
 
     // Create response with cookie

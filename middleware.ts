@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import jwt from 'jsonwebtoken'
+import { jwtVerify } from 'jose'
 
 // Public routes that don't require authentication
 const publicRoutes = ['/login', '/register']
@@ -7,15 +7,19 @@ const publicRoutes = ['/login', '/register']
 // API routes that don't require authentication
 const publicApiRoutes = ['/api/auth/login', '/api/auth/register']
 
-// Verify JWT token directly in middleware (avoid importing db)
-function verifyToken(token: string): { userId: string } | null {
+// Verify JWT token using jose (Edge Runtime compatible)
+async function verifyToken(token: string): Promise<{ userId: string } | null> {
   try {
     const JWT_SECRET = process.env.JWT_SECRET
     if (!JWT_SECRET) {
       console.error('JWT_SECRET is not defined in environment variables')
       return null
     }
-    return jwt.verify(token, JWT_SECRET) as { userId: string }
+
+    const secret = new TextEncoder().encode(JWT_SECRET)
+    const { payload } = await jwtVerify(token, secret)
+
+    return { userId: payload.userId as string }
   } catch (error) {
     console.error('Token verification failed:', error)
     return null
@@ -45,7 +49,7 @@ export async function middleware(request: NextRequest) {
     }
 
     // Verify token
-    const payload = verifyToken(token)
+    const payload = await verifyToken(token)
     if (!payload) {
       if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
