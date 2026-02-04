@@ -1,20 +1,40 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { GeminiAnalysisResult } from '@/types'
 
+const CATEGORY_OPTIONS = ['top', 'bottom', 'outerwear', 'shoes', 'accessory'] as const
+
+type AnalysisMode = 'fast' | 'enhanced' | 'assist'
+
+type Category = (typeof CATEGORY_OPTIONS)[number]
+
 export default function NewClothingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const categoryParam = searchParams.get('category')
+  const initialCategory = (CATEGORY_OPTIONS.includes(categoryParam as Category)
+    ? categoryParam
+    : 'top') as Category
+
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('fast')
+  const [analysisStep, setAnalysisStep] = useState(0)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [pendingAnalysis, setPendingAnalysis] = useState<GeminiAnalysisResult | null>(null)
+
+  const analysisSteps = useMemo(
+    () => ['读取图片', '提取轮廓', '识别颜色', '判断类别', '生成标签'],
+    []
+  )
 
   const [formData, setFormData] = useState({
     name: '',
-    category: 'top' as 'top' | 'bottom' | 'outerwear' | 'shoes' | 'accessory',
+    category: initialCategory,
     colors: [] as string[],
     season: [] as string[],
     style: [] as string[],
@@ -25,30 +45,66 @@ export default function NewClothingPage() {
     price: undefined as number | undefined,
   })
 
+  useEffect(() => {
+    if (!analyzing) {
+      setAnalysisStep(0)
+      return
+    }
+
+    const timer = setInterval(() => {
+      setAnalysisStep((prev) => (prev + 1) % analysisSteps.length)
+    }, 900)
+
+    return () => clearInterval(timer)
+  }, [analyzing, analysisSteps])
+
+  const readFileAsDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => resolve(e.target?.result as string)
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const downscaleBase64 = async (base64: string, maxSize: number = 768) => {
+    return new Promise<string>((resolve) => {
+      const img = new window.Image()
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height))
+        const width = Math.round(img.width * scale)
+        const height = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) {
+          resolve(base64)
+          return
+        }
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', 0.85))
+      }
+      img.onerror = () => resolve(base64)
+      img.src = base64
+    })
+  }
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
     setImageFile(file)
-    setAnalyzing(true) // 立即显示加载状态
+    setAnalyzing(true)
 
     try {
-      // 使用Promise包装FileReader以便await
-      const readFileAsDataURL = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onload = (e) => resolve(e.target?.result as string)
-          reader.onerror = reject
-          reader.readAsDataURL(file)
-        })
-      }
-
-      // 1. 先生成预览
       const base64 = await readFileAsDataURL(file)
       setImagePreview(base64)
 
-      // 2. 然后调用AI分析（此时加载界面已经显示）
-      await analyzeImage(file, base64)
+      const analysisBase64 =
+        analysisMode === 'fast' ? await downscaleBase64(base64) : base64
+
+      await analyzeImage(file, analysisBase64, analysisMode === 'enhanced')
     } catch (error) {
       console.error('处理图片失败:', error)
     } finally {
@@ -56,15 +112,19 @@ export default function NewClothingPage() {
     }
   }
 
-  const analyzeImage = async (file: File, base64: string) => {
+  const analyzeImage = async (
+    file: File,
+    base64: string,
+    useEnhanced: boolean
+  ) => {
     try {
-      // 调用分析API
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           imageBase64: base64,
           mimeType: file.type,
+          useEnhanced,
         }),
       })
 
@@ -72,14 +132,18 @@ export default function NewClothingPage() {
 
       if (data.success) {
         const analysis: GeminiAnalysisResult = data.analysis
-        setFormData((prev) => ({
-          ...prev,
-          name: prev.name || analysis.description,
-          category: analysis.category,
-          colors: analysis.colors,
-          season: analysis.season,
-          style: analysis.style,
-        }))
+        if (analysisMode === 'assist') {
+          setPendingAnalysis(analysis)
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            name: prev.name || analysis.description,
+            category: analysis.category,
+            colors: analysis.colors,
+            season: analysis.season,
+            style: analysis.style,
+          }))
+        }
       } else {
         console.error('AI分析失败:', data.error)
       }
@@ -143,7 +207,23 @@ export default function NewClothingPage() {
     }
   }
 
-  const toggleArrayItem = (field: 'colors' | 'season' | 'style', value: string) => {
+  const applyPendingAnalysis = () => {
+    if (!pendingAnalysis) return
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name || pendingAnalysis.description,
+      category: pendingAnalysis.category,
+      colors: pendingAnalysis.colors,
+      season: pendingAnalysis.season,
+      style: pendingAnalysis.style,
+    }))
+    setPendingAnalysis(null)
+  }
+
+  const toggleArrayItem = (
+    field: 'colors' | 'season' | 'style',
+    value: string
+  ) => {
     setFormData((prev) => {
       const array = prev[field]
       const newArray = array.includes(value)
@@ -160,9 +240,52 @@ export default function NewClothingPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* 图片上传 */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-900">
-            上传照片
-          </label>
+          <div className="flex items-center justify-between gap-4">
+            <label className="block text-sm font-medium text-gray-900">
+              上传照片
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('fast')}
+                disabled={analyzing}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                  analysisMode === 'fast'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                快速识别
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('assist')}
+                disabled={analyzing}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                  analysisMode === 'assist'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                半自动
+              </button>
+              <button
+                type="button"
+                onClick={() => setAnalysisMode('enhanced')}
+                disabled={analyzing}
+                className={`px-3 py-1 text-xs rounded-full border transition-colors ${
+                  analysisMode === 'enhanced'
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                精准识别
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">
+            快速识别更快，精准识别更细致。
+          </p>
           <input
             type="file"
             accept="image/*"
@@ -180,27 +303,61 @@ export default function NewClothingPage() {
                 className="object-cover"
               />
               {analyzing && (
-                <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mb-4"></div>
+                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3">
+                  <div className="h-10 w-10 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
                   <p className="text-white font-medium text-lg">AI 识别中...</p>
-                  <p className="text-white text-sm mt-2">正在分析衣服款式、颜色和风格</p>
+                  <p className="text-white text-sm">
+                    {analysisSteps[analysisStep]}
+                  </p>
                 </div>
               )}
+            </div>
+          )}
+          {analysisMode === 'assist' && pendingAnalysis && (
+            <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-2">
+              <div className="text-sm font-medium text-gray-900">
+                半自动建议已生成
+              </div>
+              <div className="text-xs text-gray-600">
+                {pendingAnalysis.description}
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                <span className="px-2 py-1 bg-gray-100 rounded">
+                  类别：{pendingAnalysis.category}
+                </span>
+                {pendingAnalysis.colors.map((color) => (
+                  <span key={color} className="px-2 py-1 bg-gray-100 rounded">
+                    {color}
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={applyPendingAnalysis}
+                  className="px-3 py-1 text-xs bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  一键填入
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingAnalysis(null)}
+                  className="px-3 py-1 text-xs border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  忽略
+                </button>
+              </div>
             </div>
           )}
         </div>
 
         {/* 名称 */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-900">
-            名称
-          </label>
+          <label className="block text-sm font-medium text-gray-900">名称</label>
           <input
             type="text"
             value={formData.name}
-            onChange={(e) =>
-              setFormData({ ...formData, name: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
             required
           />
@@ -208,15 +365,13 @@ export default function NewClothingPage() {
 
         {/* 类别 */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-900">
-            类别
-          </label>
+          <label className="block text-sm font-medium text-gray-900">类别</label>
           <select
             value={formData.category}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                category: e.target.value as any,
+                category: e.target.value as Category,
               })
             }
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
@@ -306,9 +461,7 @@ export default function NewClothingPage() {
           <input
             type="text"
             value={formData.brand}
-            onChange={(e) =>
-              setFormData({ ...formData, brand: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
             placeholder="例如：Uniqlo, Zara, Nike"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
           />
@@ -323,7 +476,10 @@ export default function NewClothingPage() {
             type="number"
             value={formData.price || ''}
             onChange={(e) =>
-              setFormData({ ...formData, price: e.target.value ? Number(e.target.value) : undefined })
+              setFormData({
+                ...formData,
+                price: e.target.value ? Number(e.target.value) : undefined,
+              })
             }
             placeholder="例如：299"
             min="0"

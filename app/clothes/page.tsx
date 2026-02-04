@@ -1,28 +1,30 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Clothing } from '@/types'
 import { categoryMap, colorMap } from '@/lib/utils'
 
+const CATEGORY_ORDER: Clothing['category'][] = [
+  'top',
+  'bottom',
+  'outerwear',
+  'shoes',
+  'accessory',
+]
+
 export default function ClothesPage() {
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
 
   useEffect(() => {
     fetchClothes()
-  }, [selectedCategory])
+  }, [])
 
   const fetchClothes = async () => {
     try {
-      const url =
-        selectedCategory === 'all'
-          ? '/api/clothes'
-          : `/api/clothes?category=${selectedCategory}`
-
-      const response = await fetch(url)
+      const response = await fetch('/api/clothes')
       const data = await response.json()
 
       if (data.success) {
@@ -57,43 +59,32 @@ export default function ClothesPage() {
     }
   }
 
+  const groupedClothes = useMemo(() => {
+    const groups: Record<Clothing['category'], Clothing[]> = {
+      top: [],
+      bottom: [],
+      outerwear: [],
+      shoes: [],
+      accessory: [],
+    }
+
+    for (const item of clothes) {
+      groups[item.category].push(item)
+    }
+
+    return groups
+  }, [clothes])
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">我的衣服</h1>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">我的衣橱</h1>
         <Link
           href="/clothes/new"
           className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
         >
           添加衣服
         </Link>
-      </div>
-
-      {/* Category Filter */}
-      <div className="flex gap-2 flex-wrap">
-        <button
-          onClick={() => setSelectedCategory('all')}
-          className={`px-4 py-2 rounded-md transition-colors ${
-            selectedCategory === 'all'
-              ? 'bg-black text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          全部
-        </button>
-        {Object.entries(categoryMap).map(([key, label]) => (
-          <button
-            key={key}
-            onClick={() => setSelectedCategory(key)}
-            className={`px-4 py-2 rounded-md transition-colors ${
-              selectedCategory === key
-                ? 'bg-black text-white'
-                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
       </div>
 
       {loading ? (
@@ -111,54 +102,94 @@ export default function ClothesPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {clothes.map((clothing) => (
-            <div
-              key={clothing._id}
-              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="relative aspect-square">
-                <Image
-                  src={clothing.thumbnail}
-                  alt={clothing.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="p-3 space-y-2">
-                <h3 className="font-semibold text-gray-900 truncate">
-                  {clothing.name}
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {categoryMap[clothing.category]}
-                </p>
-                <div className="flex gap-1 flex-wrap">
-                  {clothing.colors.map((color) => (
-                    <span
-                      key={color}
-                      className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"
-                    >
-                      {colorMap[color] || color}
+        <div className="space-y-10">
+          {CATEGORY_ORDER.map((category) => {
+            const items = groupedClothes[category]
+            return (
+              <section key={category} className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      {categoryMap[category]}
+                    </h2>
+                    <span className="text-xs text-gray-500">
+                      {items.length} 件
                     </span>
-                  ))}
-                </div>
-                <div className="flex gap-2 pt-2">
+                  </div>
                   <Link
-                    href={`/clothes/${clothing._id}`}
-                    className="flex-1 text-center px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors"
+                    href={`/clothes/new?category=${category}`}
+                    className="text-sm px-3 py-1 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                   >
-                    查看
+                    添加{categoryMap[category]}
                   </Link>
-                  <button
-                    onClick={() => deleteClothing(clothing._id)}
-                    className="flex-1 px-3 py-1 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 transition-colors"
-                  >
-                    删除
-                  </button>
                 </div>
-              </div>
-            </div>
-          ))}
+
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <Link
+                    href={`/clothes/new?category=${category}`}
+                    className="flex flex-col items-center justify-center border border-dashed border-gray-300 rounded-lg bg-white text-gray-600 hover:border-gray-400 hover:text-gray-900 transition-colors min-h-[140px]"
+                  >
+                    <div className="text-2xl">＋</div>
+                    <div className="text-sm mt-2">添加{categoryMap[category]}</div>
+                  </Link>
+
+                  {items.length === 0 ? (
+                    <div className="col-span-1 md:col-span-2 lg:col-span-3 flex items-center text-sm text-gray-500">
+                      暂无{categoryMap[category]}，可以先添加一件。
+                    </div>
+                  ) : (
+                    items.map((clothing) => (
+                      <div
+                        key={clothing._id}
+                        className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+                      >
+                        <div className="relative aspect-square">
+                          <Image
+                            src={clothing.thumbnail}
+                            alt={clothing.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="p-3 space-y-2">
+                          <h3 className="font-semibold text-gray-900 truncate">
+                            {clothing.name}
+                          </h3>
+                          <p className="text-sm text-gray-600">
+                            {categoryMap[clothing.category]}
+                          </p>
+                          <div className="flex gap-1 flex-wrap">
+                            {clothing.colors.map((color) => (
+                              <span
+                                key={color}
+                                className="text-xs px-2 py-1 bg-gray-100 text-gray-700 rounded"
+                              >
+                                {colorMap[color] || color}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="flex gap-2 pt-2">
+                            <Link
+                              href={`/clothes/${clothing._id}`}
+                              className="flex-1 text-center px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded hover:bg-gray-200 transition-colors"
+                            >
+                              查看
+                            </Link>
+                            <button
+                              onClick={() => deleteClothing(clothing._id)}
+                              className="flex-1 px-3 py-1 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 transition-colors"
+                            >
+                              删除
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            )
+          })}
         </div>
       )}
     </div>

@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Clothing } from '@/types'
 import { categoryMap } from '@/lib/utils'
+
+const REQUIRED_CATEGORIES: Clothing['category'][] = ['top', 'bottom', 'shoes', 'accessory']
 
 export default function CreateOutfitPage() {
   const router = useRouter()
@@ -42,11 +44,28 @@ export default function CreateOutfitPage() {
     )
   }
 
+  const missingCategories = useMemo(() => {
+    const available = REQUIRED_CATEGORIES.filter((cat) =>
+      clothes.some((c) => c.category === cat)
+    )
+    const selected = new Set(
+      selectedClothingIds
+        .map((id) => clothes.find((c) => c._id === id)?.category)
+        .filter(Boolean)
+    )
+    return available.filter((cat) => !selected.has(cat))
+  }, [clothes, selectedClothingIds])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (selectedClothingIds.length === 0) {
       alert('请至少选择一件衣服')
+      return
+    }
+
+    if (missingCategories.length > 0) {
+      alert(`请补齐以下品类：${missingCategories.map((c) => categoryMap[c]).join('、')}`)
       return
     }
 
@@ -95,9 +114,7 @@ export default function CreateOutfitPage() {
             <input
               type="text"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
               required
             />
@@ -156,9 +173,16 @@ export default function CreateOutfitPage() {
 
         {/* 选择衣服 */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">
-            选择衣服 ({selectedClothingIds.length} 件已选)
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <h2 className="text-xl font-semibold text-gray-900">
+              选择衣服 ({selectedClothingIds.length} 件已选)
+            </h2>
+            {missingCategories.length > 0 && (
+              <span className="text-sm text-red-500">
+                还缺：{missingCategories.map((c) => categoryMap[c]).join('、')}
+              </span>
+            )}
+          </div>
 
           {clothes.length === 0 ? (
             <p className="text-gray-500">
@@ -214,7 +238,7 @@ export default function CreateOutfitPage() {
           </button>
           <button
             type="submit"
-            disabled={loading || selectedClothingIds.length === 0}
+            disabled={loading || selectedClothingIds.length === 0 || missingCategories.length > 0}
             className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? '创建中...' : '创建搭配'}

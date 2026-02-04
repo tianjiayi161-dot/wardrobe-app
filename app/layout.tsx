@@ -39,7 +39,7 @@ export default function RootLayout({
                   href="/clothes"
                   className="text-gray-700 hover:text-gray-900 transition-colors"
                 >
-                  我的衣服
+                  我的衣橱
                 </Link>
                 <Link
                   href="/outfits"

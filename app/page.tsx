@@ -1,9 +1,17 @@
 'use client'
 
-// 主页组件
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { AIRecommendation, Clothing } from '@/types'
+import { categoryMap } from '@/lib/utils'
+
+const CATEGORY_ORDER: Clothing['category'][] = [
+  'top',
+  'bottom',
+  'outerwear',
+  'shoes',
+  'accessory',
+]
 
 export default function HomePage() {
   const [loading, setLoading] = useState(false)
@@ -11,7 +19,6 @@ export default function HomePage() {
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [outfitImages, setOutfitImages] = useState<Record<number, string>>({})
 
-  // 加载所有衣服数据
   useEffect(() => {
     fetchClothes()
   }, [])
@@ -28,30 +35,39 @@ export default function HomePage() {
     }
   }
 
-  // 生成搭配拼接图片
+  const categoryCounts = useMemo(() => {
+    const counts: Record<Clothing['category'], number> = {
+      top: 0,
+      bottom: 0,
+      outerwear: 0,
+      shoes: 0,
+      accessory: 0,
+    }
+    clothes.forEach((item) => {
+      counts[item.category] += 1
+    })
+    return counts
+  }, [clothes])
+
   const generateOutfitImage = async (
     clothingIds: string[],
     outfitIndex: number
   ): Promise<string> => {
-    // 获取搭配中的衣服
     const outfitClothes = clothingIds
       .map((id) => clothes.find((c) => c._id === id))
       .filter(Boolean) as Clothing[]
 
     if (outfitClothes.length === 0) return ''
 
-    // 创建 canvas
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')
     if (!ctx) return ''
 
-    // 设置画布尺寸（每件衣服120x120，横向排列）
     const itemSize = 120
     const gap = 8
     canvas.width = outfitClothes.length * itemSize + (outfitClothes.length - 1) * gap
     canvas.height = itemSize
 
-    // 加载并绘制所有图片
     const loadImage = (src: string): Promise<HTMLImageElement> => {
       return new Promise((resolve, reject) => {
         const img = new window.Image()
@@ -67,20 +83,17 @@ export default function HomePage() {
         const img = await loadImage(outfitClothes[i].imageUrl)
         const x = i * (itemSize + gap)
 
-        // 绘制圆角背景
         ctx.fillStyle = '#f3f4f6'
         ctx.beginPath()
         ctx.roundRect(x, 0, itemSize, itemSize, 8)
         ctx.fill()
 
-        // 计算图片缩放以填充正方形（保持宽高比）
         const scale = Math.max(itemSize / img.width, itemSize / img.height)
         const scaledWidth = img.width * scale
         const scaledHeight = img.height * scale
         const offsetX = x + (itemSize - scaledWidth) / 2
         const offsetY = (itemSize - scaledHeight) / 2
 
-        // 裁剪圆角区域并绘制图片
         ctx.save()
         ctx.beginPath()
         ctx.roundRect(x, 0, itemSize, itemSize, 8)
@@ -89,7 +102,6 @@ export default function HomePage() {
         ctx.restore()
       }
 
-      // 转换为 base64
       return canvas.toDataURL('image/png')
     } catch (error) {
       console.error('生成拼接图片失败:', error)
@@ -97,7 +109,6 @@ export default function HomePage() {
     }
   }
 
-  // 生成推荐后生成所有拼接图片
   useEffect(() => {
     if (recommendations.length > 0 && clothes.length > 0) {
       recommendations.forEach(async (rec, index) => {
@@ -109,7 +120,7 @@ export default function HomePage() {
 
   const generateRecommendations = async () => {
     setLoading(true)
-    setOutfitImages({}) // 清空之前的图片
+    setOutfitImages({})
     try {
       const response = await fetch('/api/recommend', {
         method: 'POST',
@@ -161,49 +172,110 @@ export default function HomePage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold text-gray-900">
-          欢迎来到你的电子衣橱
-        </h1>
-        <p className="text-lg text-gray-600">
-          智能管理你的衣服，AI 帮你搭配
-        </p>
-      </div>
+    <div className="space-y-10">
+      <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">我的衣橱</h1>
+            <p className="text-sm text-gray-600 mt-1">分类管理与快速新增</p>
+          </div>
+          <Link
+            href="/clothes"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            进入衣橱
+          </Link>
+        </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link
-          href="/clothes/new"
-          className="p-6 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-center"
-        >
-          <div className="text-3xl mb-2">👕</div>
-          <h3 className="font-semibold text-gray-900">添加衣服</h3>
-          <p className="text-sm text-gray-600 mt-1">上传照片，AI 自动识别</p>
-        </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {CATEGORY_ORDER.map((category) => (
+            <div
+              key={category}
+              className="border border-gray-200 rounded-lg p-4 flex flex-col gap-3"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-900">
+                  {categoryMap[category]}
+                </span>
+                <span className="text-xs text-gray-500">
+                  {categoryCounts[category]} 件
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href={`/clothes/new?category=${category}`}
+                  className="flex-1 text-center px-2 py-1 text-xs bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+                >
+                  添加
+                </Link>
+                <Link
+                  href="/clothes"
+                  className="flex-1 text-center px-2 py-1 text-xs border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                >
+                  查看
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <Link
-          href="/clothes"
-          className="p-6 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-center"
-        >
-          <div className="text-3xl mb-2">👚</div>
-          <h3 className="font-semibold text-gray-900">浏览衣橱</h3>
-          <p className="text-sm text-gray-600 mt-1">查看所有衣服</p>
-        </Link>
+      <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">我的搭配</h2>
+            <p className="text-sm text-gray-600 mt-1">自创搭配 + AI 帮你搭</p>
+          </div>
+          <Link
+            href="/outfits"
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            查看搭配
+          </Link>
+        </div>
 
-        <Link
-          href="/outfits/create"
-          className="p-6 bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all text-center"
-        >
-          <div className="text-3xl mb-2">✨</div>
-          <h3 className="font-semibold text-gray-900">创建搭配</h3>
-          <p className="text-sm text-gray-600 mt-1">手动组合搭配</p>
-        </Link>
-      </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border border-gray-200 rounded-lg p-5 space-y-3">
+            <h3 className="text-lg font-semibold text-gray-900">自创搭配</h3>
+            <p className="text-sm text-gray-600">手动挑选，打造自己的搭配风格。</p>
+            <div className="flex gap-2">
+              <Link
+                href="/outfits/create"
+                className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
+              >
+                开始创建
+              </Link>
+              <Link
+                href="/outfits"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                查看列表
+              </Link>
+            </div>
+          </div>
+          <div className="border border-gray-200 rounded-lg p-5 space-y-3">
+            <h3 className="text-lg font-semibold text-gray-900">AI 帮我搭</h3>
+            <p className="text-sm text-gray-600">快速生成完整搭配，支持一键保存。</p>
+            <div className="flex gap-2">
+              <button
+                onClick={generateRecommendations}
+                disabled={loading}
+                className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? '生成中...' : '生成推荐'}
+              </button>
+              <Link
+                href="/outfits"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                已保存搭配
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      {/* AI Recommendations */}
-      <div className="space-y-4">
+      <section id="ai" className="space-y-4">
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-gray-900">AI 推荐搭配</h2>
           <button
@@ -222,7 +294,6 @@ export default function HomePage() {
                 key={index}
                 className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
               >
-                {/* 拼接图片预览 */}
                 {outfitImages[index] && (
                   <div className="relative w-full h-32 bg-gray-100 flex items-center justify-center p-2">
                     <img
@@ -242,9 +313,7 @@ export default function HomePage() {
                     <p className="line-clamp-2">💡 {rec.reasoning}</p>
                     {rec.occasion && <p>📍 场合: {rec.occasion}</p>}
                     {rec.season && <p>🌡️ 季节: {rec.season}</p>}
-                    <p className="text-gray-400">
-                      {rec.clothingIds.length} 件衣服
-                    </p>
+                    <p className="text-gray-400">{rec.clothingIds.length} 件衣服</p>
                   </div>
                   <button
                     onClick={() => saveRecommendation(rec)}
@@ -263,7 +332,7 @@ export default function HomePage() {
             <p className="text-gray-500">点击"生成推荐"获取 AI 搭配建议</p>
           </div>
         )}
-      </div>
+      </section>
     </div>
   )
 }

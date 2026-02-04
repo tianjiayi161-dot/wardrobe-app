@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzeClothingImageEnhanced } from '@/lib/qwen'
+import { analyzeClothingImage, analyzeClothingImageEnhanced } from '@/lib/qwen'
 import { analyzeImageQuality } from '@/lib/image-processing'
 
 export async function POST(request: NextRequest) {
@@ -18,7 +18,10 @@ export async function POST(request: NextRequest) {
     // 图片质量检测
     let qualityWarnings: string[] = []
     try {
-      const imageBuffer = Buffer.from(imageBase64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
+      const imageBuffer = Buffer.from(
+        imageBase64.replace(/^data:image\/\w+;base64,/, ''),
+        'base64'
+      )
       const quality = await analyzeImageQuality(imageBuffer)
       qualityWarnings = quality.warnings
       console.log('图片质量检测完成:', quality)
@@ -26,12 +29,11 @@ export async function POST(request: NextRequest) {
       console.warn('图片质量分析失败:', e)
     }
 
-    // 使用增强版AI分析
-    console.log('调用Gemini增强分析...')
-    const analysis = await analyzeClothingImageEnhanced(
-      imageBase64,
-      mimeType || 'image/jpeg'
-    )
+    // 使用AI分析（增强或快速）
+    const analysis = useEnhanced
+      ? await analyzeClothingImageEnhanced(imageBase64, mimeType || 'image/jpeg')
+      : await analyzeClothingImage(imageBase64, mimeType || 'image/jpeg')
+
     console.log('AI分析结果:', analysis)
 
     return NextResponse.json({

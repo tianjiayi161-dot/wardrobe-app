@@ -319,7 +319,7 @@ export async function generateOutfitRecommendations(
           content: `我有以下衣服：
 ${clothesDescription}
 
-请根据这些衣服，推荐${count}套搭配方案。每套搭配应该包含上装、下装等合理组合。
+请根据这些衣服，推荐${count}套搭配方案。每套搭配应尽量完整：包含上装+下装的合理组合；如果衣橱中有鞋子/配饰/外套，请尽量包含（若某类别不存在则无需强行补齐）。
 
 请以JSON数组格式返回，每个搭配包含：
 [
