@@ -42,8 +42,11 @@ export const colorMap: Record<string, string> = {
 
 // 类别的中文映射
 export const categoryMap: Record<string, string> = {
-  top: '上装',
-  bottom: '下装',
+  tshirt: 'T恤',
+  shirt: '衬衫',
+  knit: '针织/毛衣',
+  sweatshirt: '卫衣',
+  camisole: '背心/吊带',
   bottom_pants: '裤装',
   bottom_skirt: '裙装',
   dress: '连衣裙',
@@ -54,6 +57,8 @@ export const categoryMap: Record<string, string> = {
   innerwear: '内衣',
   homewear: '家居服',
   sportswear: '运动服',
+  top: '上装（旧）',
+  bottom: '下装（旧）',
 }
 
 // 季节的中文映射

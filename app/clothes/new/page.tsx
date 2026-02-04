@@ -6,7 +6,11 @@ import Image from 'next/image'
 import { GeminiAnalysisResult } from '@/types'
 
 const CATEGORY_OPTIONS = [
-  'top',
+  'tshirt',
+  'shirt',
+  'knit',
+  'sweatshirt',
+  'camisole',
   'bottom_pants',
   'bottom_skirt',
   'dress',
@@ -17,7 +21,6 @@ const CATEGORY_OPTIONS = [
   'innerwear',
   'homewear',
   'sportswear',
-  'bottom',
 ] as const
 
 type AnalysisMode = 'fast' | 'enhanced' | 'assist'
@@ -28,9 +31,15 @@ function NewClothingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const categoryParam = searchParams.get('category')
-  const initialCategory = (CATEGORY_OPTIONS.includes(categoryParam as Category)
-    ? categoryParam
-    : 'top') as Category
+  const normalizeCategory = (value: string | null): Category => {
+    if (value && CATEGORY_OPTIONS.includes(value as Category)) {
+      return value as Category
+    }
+    if (value === 'top') return 'tshirt'
+    if (value === 'bottom') return 'bottom_pants'
+    return 'tshirt'
+  }
+  const initialCategory = normalizeCategory(categoryParam)
 
   const [loading, setLoading] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
@@ -56,6 +65,7 @@ function NewClothingForm() {
     tags: [] as string[],
     brand: '',
     price: undefined as number | undefined,
+    wearCount: 0,
   })
 
   useEffect(() => {
@@ -145,16 +155,20 @@ function NewClothingForm() {
 
       if (data.success) {
         const analysis: GeminiAnalysisResult = data.analysis
+        const normalized = {
+          ...analysis,
+          category: normalizeCategory(analysis.category),
+        }
         if (analysisMode === 'assist') {
-          setPendingAnalysis(analysis)
+          setPendingAnalysis(normalized)
         } else {
           setFormData((prev) => ({
             ...prev,
-            name: prev.name || analysis.description,
-            category: analysis.category,
-            colors: analysis.colors,
-            season: analysis.season,
-            style: analysis.style,
+            name: prev.name || normalized.description,
+            category: normalized.category,
+            colors: normalized.colors,
+            season: normalized.season,
+            style: normalized.style,
           }))
         }
       } else {
@@ -389,7 +403,11 @@ function NewClothingForm() {
             }
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
           >
-            <option value="top">上装</option>
+            <option value="tshirt">T恤</option>
+            <option value="shirt">衬衫</option>
+            <option value="knit">针织/毛衣</option>
+            <option value="sweatshirt">卫衣</option>
+            <option value="camisole">背心/吊带</option>
             <option value="bottom_pants">裤装</option>
             <option value="bottom_skirt">裙装</option>
             <option value="dress">连衣裙</option>
@@ -400,7 +418,6 @@ function NewClothingForm() {
             <option value="innerwear">内衣</option>
             <option value="homewear">家居服</option>
             <option value="sportswear">运动服</option>
-            <option value="bottom">下装（旧）</option>
           </select>
         </div>
 
@@ -506,6 +523,40 @@ function NewClothingForm() {
             step="0.01"
             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
           />
+        </div>
+
+        {/* 穿着次数 */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-900">
+            穿着次数
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              min="0"
+              step="1"
+              value={formData.wearCount}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  wearCount: Math.max(0, Number(e.target.value || 0)),
+                })
+              }
+              className="w-28 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  wearCount: prev.wearCount + 1,
+                }))
+              }
+              className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {/* 提交按钮 */}

@@ -7,7 +7,11 @@ import { Clothing } from '@/types'
 import { categoryMap, colorMap } from '@/lib/utils'
 
 const CATEGORY_ORDER: Clothing['category'][] = [
-  'top',
+  'tshirt',
+  'shirt',
+  'knit',
+  'sweatshirt',
+  'camisole',
   'bottom_pants',
   'bottom_skirt',
   'dress',
@@ -18,6 +22,7 @@ const CATEGORY_ORDER: Clothing['category'][] = [
   'innerwear',
   'homewear',
   'sportswear',
+  'top',
   'bottom',
 ]
 
@@ -66,10 +71,38 @@ export default function ClothesPage() {
     }
   }
 
+  const incrementWearCount = async (id: string, current: number) => {
+    try {
+      const response = await fetch(`/api/clothes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wearCount: current + 1 }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setClothes((prev) =>
+          prev.map((item) =>
+            item._id === id ? { ...item, wearCount: current + 1 } : item
+          )
+        )
+      } else {
+        alert(data.error || '更新失败')
+      }
+    } catch (error) {
+      console.error('更新穿着次数失败:', error)
+      alert('更新失败，请稍后重试')
+    }
+  }
+
   const groupedClothes = useMemo(() => {
     const groups: Record<Clothing['category'], Clothing[]> = {
-      top: [],
-      bottom: [],
+      tshirt: [],
+      shirt: [],
+      knit: [],
+      sweatshirt: [],
+      camisole: [],
       bottom_pants: [],
       bottom_skirt: [],
       dress: [],
@@ -80,6 +113,8 @@ export default function ClothesPage() {
       innerwear: [],
       homewear: [],
       sportswear: [],
+      top: [],
+      bottom: [],
     }
 
     for (const item of clothes) {
@@ -194,6 +229,20 @@ export default function ClothesPage() {
                               className="flex-1 px-3 py-1 bg-red-50 text-red-600 text-sm rounded hover:bg-red-100 transition-colors"
                             >
                               删除
+                            </button>
+                          </div>
+                          <div className="flex items-center justify-between pt-2 text-xs text-gray-600">
+                            <span>穿着次数：{clothing.wearCount || 0}</span>
+                            <button
+                              onClick={() =>
+                                incrementWearCount(
+                                  clothing._id,
+                                  clothing.wearCount || 0
+                                )
+                              }
+                              className="px-2 py-1 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                            >
+                              +
                             </button>
                           </div>
                         </div>

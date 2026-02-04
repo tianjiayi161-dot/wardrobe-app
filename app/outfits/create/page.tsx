@@ -6,9 +6,17 @@ import Image from 'next/image'
 import { Clothing } from '@/types'
 import { categoryMap } from '@/lib/utils'
 
-const REQUIRED_CATEGORIES: Clothing['category'][] = [
+const TOP_CATEGORIES: Clothing['category'][] = [
+  'tshirt',
+  'shirt',
+  'knit',
+  'sweatshirt',
+  'camisole',
   'top',
-  'bottom',
+]
+
+const REQUIRED_CATEGORIES: Clothing['category'][] = [
+  ...TOP_CATEGORIES,
   'bottom_pants',
   'bottom_skirt',
   'shoes',
@@ -68,23 +76,23 @@ export default function CreateOutfitPage() {
 
     const selected = new Set(selectedCategories)
     const hasFullOutfit = FULL_OUTFIT_CATEGORIES.some((cat) => selected.has(cat))
-    const hasTop = selected.has('top')
+    const hasTop = TOP_CATEGORIES.some((cat) => selected.has(cat))
     const hasBottom =
-      selected.has('bottom') ||
       selected.has('bottom_pants') ||
       selected.has('bottom_skirt')
 
     const missing: Clothing['category'][] = []
 
     if (!hasFullOutfit) {
-      if (available.includes('top') && !hasTop) missing.push('top')
+      if (!hasTop) {
+        const availableTop = TOP_CATEGORIES.find((cat) => available.includes(cat))
+        if (availableTop) missing.push(availableTop)
+      }
       if (!hasBottom) {
         if (available.includes('bottom_pants')) {
           missing.push('bottom_pants')
         } else if (available.includes('bottom_skirt')) {
           missing.push('bottom_skirt')
-        } else if (available.includes('bottom')) {
-          missing.push('bottom')
         }
       }
     }

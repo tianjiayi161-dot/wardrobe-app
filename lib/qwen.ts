@@ -37,7 +37,7 @@ export async function analyzeClothingImage(
               type: 'text',
               text: `请分析这张衣服图片，并以JSON格式返回以下信息：
 {
-  "category": "类别（top/bottom_pants/bottom_skirt/dress/outerwear/shoes/accessory/set/innerwear/homewear/sportswear之一）",
+  "category": "类别（tshirt/shirt/knit/sweatshirt/camisole/bottom_pants/bottom_skirt/dress/outerwear/shoes/accessory/set/innerwear/homewear/sportswear之一）",
   "colors": ["主要颜色1", "主要颜色2"],
   "style": ["风格标签，如casual/formal/sport等"],
   "season": ["适合的季节，如spring/summer/fall/winter"],
@@ -45,7 +45,7 @@ export async function analyzeClothingImage(
 }
 
 注意：
-- category必须是以下之一：top（上装）, bottom_pants（裤装）, bottom_skirt（裙装）, dress（连衣裙）, outerwear（外套）, shoes（鞋子）, accessory（配饰）, set（套装）, innerwear（内衣）, homewear（家居服）, sportswear（运动服）
+- category必须是以下之一：tshirt（T恤）, shirt（衬衫）, knit（针织/毛衣）, sweatshirt（卫衣）, camisole（背心/吊带）, bottom_pants（裤装）, bottom_skirt（裙装）, dress（连衣裙）, outerwear（外套）, shoes（鞋子）, accessory（配饰）, set（套装）, innerwear（内衣）, homewear（家居服）, sportswear（运动服）
 - colors用英文单词，如red, blue, black, white等
 - style可以是：casual, formal, sport, elegant, vintage, street
 - season可以是：spring, summer, fall, winter
@@ -70,7 +70,7 @@ export async function analyzeClothingImage(
     console.error('通义千问分析失败:', error)
     // 返回默认值
     return {
-      category: 'top',
+      category: 'tshirt',
       colors: ['black'],
       style: ['casual'],
       season: ['spring', 'summer', 'fall', 'winter'],
@@ -107,7 +107,7 @@ export async function analyzeClothingImageEnhanced(
               text: `你是专业的服装分析师。请非常仔细地观察这件衣服，并详细描述：
 
 1. **衣服类型**（请非常具体）：
-   - 上装：T恤、衬衫、毛衣、卫衣、背心、吊带等
+   - 上身类：T恤、衬衫、针织/毛衣、卫衣、背心/吊带等
    - 下装：裤装（牛仔裤、休闲裤、西裤、短裤等）、裙装（半身裙等）
    - 连衣裙：连衣裙、吊带裙等
    - 外套：夹克、大衣、风衣、羽绒服等
@@ -171,7 +171,11 @@ ${observationText}
 **分类规则（严格遵守）：**
 
 1. category - 必须选择以下之一：
-   - "top": T恤、衬衫、毛衣、卫衣、背心、吊带等所有上身衣物
+   - "tshirt": T恤
+   - "shirt": 衬衫
+   - "knit": 针织/毛衣
+   - "sweatshirt": 卫衣
+   - "camisole": 背心/吊带
    - "bottom_pants": 裤子、短裤等所有裤装
    - "bottom_skirt": 半身裙等所有裙装
    - "dress": 连衣裙、吊带裙等
@@ -329,8 +333,8 @@ export async function generateOutfitRecommendations(
 ${clothesDescription}
 
 请根据这些衣服，推荐${count}套搭配方案。每套搭配应尽量完整：
-- 若使用连衣裙/套装/运动服/家居服，可视为完成上装+下装
-- 否则应包含上装+下装（裤装或裙装）
+- 若使用连衣裙/套装/运动服/家居服，可视为完成上身+下装
+- 否则应包含上身类+下装（裤装或裙装）
 - 如果衣橱中有鞋子/配饰/外套，请尽量包含（若某类别不存在则无需强行补齐）。
 
 请以JSON数组格式返回，每个搭配包含：
@@ -348,7 +352,7 @@ ${clothesDescription}
 注意：
 - clothingIds必须使用上面列表中的实际ID
 - 每套搭配至少包含2件衣服
-- 搭配要合理（比如有上装和下装）
+- 搭配要合理（比如有上身类和下装）
 - 只返回JSON数组，不要其他文字`,
         },
       ],

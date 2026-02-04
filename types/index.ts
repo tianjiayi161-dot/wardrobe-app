@@ -3,8 +3,11 @@ export interface Clothing {
   _id: string
   name: string
   category:
-    | 'top'
-    | 'bottom'
+    | 'tshirt'
+    | 'shirt'
+    | 'knit'
+    | 'sweatshirt'
+    | 'camisole'
     | 'bottom_pants'
     | 'bottom_skirt'
     | 'dress'
@@ -15,6 +18,8 @@ export interface Clothing {
     | 'innerwear'
     | 'homewear'
     | 'sportswear'
+    | 'top'
+    | 'bottom'
   colors: string[]  // 主要颜色标签
   season: string[]  // ['spring', 'summer', 'fall', 'winter']
   style: string[]   // ['casual', 'formal', 'sport']
@@ -32,8 +37,11 @@ export interface Clothing {
 export interface CreateClothingInput {
   name: string
   category:
-    | 'top'
-    | 'bottom'
+    | 'tshirt'
+    | 'shirt'
+    | 'knit'
+    | 'sweatshirt'
+    | 'camisole'
     | 'bottom_pants'
     | 'bottom_skirt'
     | 'dress'
@@ -44,6 +52,8 @@ export interface CreateClothingInput {
     | 'innerwear'
     | 'homewear'
     | 'sportswear'
+    | 'top'
+    | 'bottom'
   colors: string[]
   season: string[]
   style: string[]
@@ -52,6 +62,7 @@ export interface CreateClothingInput {
   tags?: string[]
   brand?: string
   price?: number
+  wearCount?: number
 }
 
 // 搭配类型定义
@@ -81,8 +92,11 @@ export interface CreateOutfitInput {
 // Gemini分析结果
 export interface GeminiAnalysisResult {
   category:
-    | 'top'
-    | 'bottom'
+    | 'tshirt'
+    | 'shirt'
+    | 'knit'
+    | 'sweatshirt'
+    | 'camisole'
     | 'bottom_pants'
     | 'bottom_skirt'
     | 'dress'
@@ -93,6 +107,8 @@ export interface GeminiAnalysisResult {
     | 'innerwear'
     | 'homewear'
     | 'sportswear'
+    | 'top'
+    | 'bottom'
   colors: string[]
   style: string[]
   season: string[]

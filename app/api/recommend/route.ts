@@ -5,7 +5,14 @@ import { Clothing, AIRecommendation } from '@/types'
 
 type ClothingCategory = Clothing['category']
 
-const REQUIRED_CATEGORIES: ClothingCategory[] = ['top', 'bottom', 'bottom_pants', 'bottom_skirt', 'shoes', 'accessory']
+const TOP_CATEGORIES: ClothingCategory[] = [
+  'tshirt',
+  'shirt',
+  'knit',
+  'sweatshirt',
+  'camisole',
+  'top',
+]
 
 const FULL_OUTFIT_CATEGORIES: ClothingCategory[] = [
   'dress',
@@ -17,8 +24,11 @@ const FULL_OUTFIT_CATEGORIES: ClothingCategory[] = [
 function buildCategoryIndex(clothes: Clothing[]) {
   const byId = new Map<string, Clothing>()
   const byCategory: Record<ClothingCategory, Clothing[]> = {
-    top: [],
-    bottom: [],
+    tshirt: [],
+    shirt: [],
+    knit: [],
+    sweatshirt: [],
+    camisole: [],
     bottom_pants: [],
     bottom_skirt: [],
     dress: [],
@@ -29,6 +39,8 @@ function buildCategoryIndex(clothes: Clothing[]) {
     innerwear: [],
     homewear: [],
     sportswear: [],
+    top: [],
+    bottom: [],
   }
 
   for (const item of clothes) {
@@ -59,9 +71,8 @@ function ensureCompleteOutfit(
     normalized.some((id) => byId.get(id)?.category === cat)
 
   const hasFullOutfit = FULL_OUTFIT_CATEGORIES.some((cat) => hasCategory(cat))
-  const hasTop = hasCategory('top')
+  const hasTop = TOP_CATEGORIES.some((cat) => hasCategory(cat))
   const hasBottom =
-    hasCategory('bottom') ||
     hasCategory('bottom_pants') ||
     hasCategory('bottom_skirt')
 
@@ -80,14 +91,19 @@ function ensureCompleteOutfit(
   }
 
   if (!hasFullOutfit) {
-    ensureCategory('top')
+    if (!hasTop) {
+      for (const cat of TOP_CATEGORIES) {
+        if (byCategory[cat].length > 0) {
+          ensureCategory(cat)
+          break
+        }
+      }
+    }
     if (!hasBottom) {
       if (byCategory.bottom_pants.length > 0) {
         ensureCategory('bottom_pants')
       } else if (byCategory.bottom_skirt.length > 0) {
         ensureCategory('bottom_skirt')
-      } else {
-        ensureCategory('bottom')
       }
     }
   }
