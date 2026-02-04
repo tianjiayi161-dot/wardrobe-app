@@ -36,8 +36,8 @@ export default function NewClothingPage() {
     }
     reader.readAsDataURL(file)
 
-    // 自动触发AI分析
-    analyzeImage(file)
+    // 自动触发AI分析（await确保按顺序执行）
+    await analyzeImage(file)
   }
 
   const analyzeImage = async (file: File) => {
