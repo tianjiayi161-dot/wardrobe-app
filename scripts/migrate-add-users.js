@@ -14,9 +14,19 @@
  * npm run migrate
  */
 
+import dotenv from 'dotenv'
 import { MongoClient, ObjectId } from 'mongodb'
 import bcrypt from 'bcryptjs'
 import readline from 'readline'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+// 获取当前文件的目录
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+
+// 加载 .env.local 文件
+dotenv.config({ path: join(__dirname, '..', '.env.local') })
 
 // 从环境变量读取 MongoDB URI
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/wardrobe'
@@ -36,9 +46,9 @@ function question(prompt) {
 
 // 主函数
 async function migrate() {
-  console.log('='==='.repeat(60))
+  console.log('='.repeat(60))
   console.log('What2Wear 数据迁移工具')
-  console.log('='==='.repeat(60))
+  console.log('='.repeat(60))
   console.log()
 
   let client
@@ -61,7 +71,7 @@ async function migrate() {
     const existingUsers = await usersCollection.countDocuments()
     if (existingUsers > 0) {
       console.log(`警告: 已存在 ${existingUsers} 个用户账号`)
-      const confirm = await question('是否继续创建新的管理员账号？(y/N): ')
+      const confirm = process.env.SKIP_CONFIRM === 'true' ? 'y' : await question('是否继续创建新的管理员账号？(y/N): ')
       if (confirm.toLowerCase() !== 'y') {
         console.log('已取消迁移')
         rl.close()
@@ -72,9 +82,11 @@ async function migrate() {
 
     // 3. 获取管理员信息
     console.log('\n请输入管理员账号信息:')
-    const adminName = await question('姓名: ')
-    const adminEmail = await question('邮箱: ')
-    const adminPassword = await question('密码 (至少8个字符，包含大小写字母和数字): ')
+
+    // 支持从环境变量读取（用于非交互式运行）
+    const adminName = process.env.ADMIN_NAME || await question('姓名: ')
+    const adminEmail = process.env.ADMIN_EMAIL || await question('邮箱: ')
+    const adminPassword = process.env.ADMIN_PASSWORD || await question('密码 (至少8个字符，包含大小写字母和数字): ')
 
     // 验证输入
     if (!adminName || !adminEmail || !adminPassword) {
