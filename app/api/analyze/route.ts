@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzeClothingImageEnhanced } from '@/lib/gemini'
+import { analyzeClothingImageEnhanced } from '@/lib/qwen'
 import { analyzeImageQuality } from '@/lib/image-processing'
 
 export async function POST(request: NextRequest) {

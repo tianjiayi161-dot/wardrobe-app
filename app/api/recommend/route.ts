@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCollection } from '@/lib/db'
-import { generateOutfitRecommendations } from '@/lib/gemini'
+import { generateOutfitRecommendations } from '@/lib/qwen'
 import { Clothing } from '@/types'
 
 export async function POST(request: NextRequest) {
