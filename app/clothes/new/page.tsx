@@ -30,56 +30,62 @@ export default function NewClothingPage() {
     if (!file) return
 
     setImageFile(file)
-
-    // 生成预览
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      setImagePreview(e.target?.result as string)
-    }
-    reader.readAsDataURL(file)
-
-    // 自动触发AI分析（await确保按顺序执行）
-    await analyzeImage(file)
-  }
-
-  const analyzeImage = async (file: File) => {
-    setAnalyzing(true)
+    setAnalyzing(true) // 立即显示加载状态
 
     try {
-      // 转换为base64
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string
-
-        // 调用分析API
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            imageBase64: base64,
-            mimeType: file.type,
-          }),
+      // 使用Promise包装FileReader以便await
+      const readFileAsDataURL = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = reject
+          reader.readAsDataURL(file)
         })
-
-        const data = await response.json()
-
-        if (data.success) {
-          const analysis: GeminiAnalysisResult = data.analysis
-          setFormData((prev) => ({
-            ...prev,
-            name: prev.name || analysis.description,
-            category: analysis.category,
-            colors: analysis.colors,
-            season: analysis.season,
-            style: analysis.style,
-          }))
-        }
       }
-      reader.readAsDataURL(file)
+
+      // 1. 先生成预览
+      const base64 = await readFileAsDataURL(file)
+      setImagePreview(base64)
+
+      // 2. 然后调用AI分析（此时加载界面已经显示）
+      await analyzeImage(file, base64)
     } catch (error) {
-      console.error('AI分析失败:', error)
+      console.error('处理图片失败:', error)
     } finally {
       setAnalyzing(false)
+    }
+  }
+
+  const analyzeImage = async (file: File, base64: string) => {
+    try {
+      // 调用分析API
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: base64,
+          mimeType: file.type,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        const analysis: GeminiAnalysisResult = data.analysis
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || analysis.description,
+          category: analysis.category,
+          colors: analysis.colors,
+          season: analysis.season,
+          style: analysis.style,
+        }))
+      } else {
+        console.error('AI分析失败:', data.error)
+      }
+    } catch (error) {
+      console.error('AI分析失败:', error)
+      throw error
     }
   }
 
