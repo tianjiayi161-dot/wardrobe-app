@@ -26,6 +26,7 @@ const CATEGORY_OPTIONS = [
 type AnalysisMode = 'fast' | 'enhanced' | 'assist'
 
 type Category = (typeof CATEGORY_OPTIONS)[number]
+type PendingAnalysis = Omit<GeminiAnalysisResult, 'category'> & { category: Category }
 
 function NewClothingForm() {
   const router = useRouter()
@@ -47,7 +48,7 @@ function NewClothingForm() {
   const [analysisStep, setAnalysisStep] = useState(0)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  const [pendingAnalysis, setPendingAnalysis] = useState<GeminiAnalysisResult | null>(null)
+  const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null)
 
   const analysisSteps = useMemo(
     () => ['读取图片', '提取轮廓', '识别颜色', '判断类别', '生成标签'],
@@ -155,7 +156,7 @@ function NewClothingForm() {
 
       if (data.success) {
         const analysis: GeminiAnalysisResult = data.analysis
-        const normalized = {
+        const normalized: PendingAnalysis = {
           ...analysis,
           category: normalizeCategory(analysis.category),
         }
