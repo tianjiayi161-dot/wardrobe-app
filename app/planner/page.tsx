@@ -9,6 +9,7 @@ type PlanType = 'outfit' | 'clothes'
 
 type WearPlan = {
   id: string
+  _id?: string
   date: string
   title: string
   type: PlanType
@@ -17,8 +18,6 @@ type WearPlan = {
   tips?: string[]
   createdAt: string
 }
-
-const STORAGE_KEY = 'wear-plans'
 
 type WeatherData = {
   temperature: number
@@ -144,12 +143,14 @@ export default function PlannerPage() {
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [outfits, setOutfits] = useState<Outfit[]>([])
   const [plans, setPlans] = useState<WearPlan[]>([])
+  const [plansLoading, setPlansLoading] = useState(true)
 
   const [selectedDate, setSelectedDate] = useState('')
   const [planTitle, setPlanTitle] = useState('')
   const [planType, setPlanType] = useState<PlanType>('outfit')
   const [selectedOutfit, setSelectedOutfit] = useState('')
   const [selectedClothes, setSelectedClothes] = useState<string[]>([])
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -168,21 +169,29 @@ export default function PlannerPage() {
       }
     }
 
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    if (saved) {
-      try {
-        setPlans(JSON.parse(saved))
-      } catch (error) {
-        console.error('解析日程失败:', error)
-      }
-    }
-
     loadData()
   }, [])
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(plans))
-  }, [plans])
+    const loadPlans = async () => {
+      try {
+        const res = await fetch('/api/schedules')
+        const data = await res.json()
+        if (data.success) {
+          const mapped = (data.schedules || []).map((item: any) => ({
+            ...item,
+            id: item._id,
+          }))
+          setPlans(mapped)
+        }
+      } catch (error) {
+        console.error('加载日程失败:', error)
+      } finally {
+        setPlansLoading(false)
+      }
+    }
+    loadPlans()
+  }, [])
 
   const plannedByDate = useMemo(() => {
     const grouped: Record<string, WearPlan[]> = {}
@@ -256,26 +265,74 @@ export default function PlannerPage() {
       weather,
     })
 
-    const newPlan: WearPlan = {
-      id: `${Date.now()}`,
-      date: selectedDate,
+    const payload = {
       title: resolvedTitle,
+      date: selectedDate,
       type: planType,
       outfitId: planType === 'outfit' ? selectedOutfit : undefined,
       clothingIds: planType === 'clothes' ? selectedClothes : undefined,
       tips,
-      createdAt: new Date().toISOString(),
     }
 
-    setPlans((prev) => [newPlan, ...prev])
+    try {
+      if (editingId) {
+        const res = await fetch(`/api/schedules/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (!data.success) {
+          alert(data.error || '更新失败')
+          return
+        }
+        setPlans((prev) =>
+          prev.map((p) => (p.id === editingId ? { ...p, ...payload } : p))
+        )
+      } else {
+        const res = await fetch('/api/schedules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await res.json()
+        if (!data.success) {
+          alert(data.error || '创建失败')
+          return
+        }
+        const created: WearPlan = {
+          id: data.schedule._id,
+          ...payload,
+          createdAt: data.schedule.createdAt,
+        }
+        setPlans((prev) => [created, ...prev])
+      }
+    } catch (error) {
+      console.error('保存日程失败:', error)
+      alert('保存失败，请稍后重试')
+      return
+    }
+
+    setEditingId(null)
     setPlanTitle('')
     setSelectedOutfit('')
     setSelectedClothes([])
   }
 
-  const deletePlan = (id: string) => {
+  const deletePlan = async (id: string) => {
     if (!confirm('确定要删除这个日程吗？')) return
-    setPlans((prev) => prev.filter((item) => item.id !== id))
+    try {
+      const res = await fetch(`/api/schedules/${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (!data.success) {
+        alert(data.error || '删除失败')
+        return
+      }
+      setPlans((prev) => prev.filter((item) => item.id !== id))
+    } catch (error) {
+      console.error('删除日程失败:', error)
+      alert('删除失败，请稍后重试')
+    }
   }
 
   return (
@@ -296,7 +353,25 @@ export default function PlannerPage() {
       </div>
 
       <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">添加计划</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {editingId ? '编辑计划' : '添加计划'}
+          </h2>
+          {editingId && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingId(null)
+                setPlanTitle('')
+                setSelectedOutfit('')
+                setSelectedClothes([])
+              }}
+              className="text-sm text-gray-500 hover:text-gray-900"
+            >
+              取消编辑
+            </button>
+          )}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-900">日期</label>
@@ -352,7 +427,7 @@ export default function PlannerPage() {
               onClick={handleAddPlan}
               className="w-full px-3 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors"
             >
-              添加到日程
+              {editingId ? '保存修改' : '添加到日程'}
             </button>
           </div>
         </div>
@@ -401,7 +476,9 @@ export default function PlannerPage() {
 
       <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
         <h2 className="text-xl font-semibold text-gray-900">日程列表</h2>
-        {Object.keys(plannedByDate).length === 0 ? (
+        {plansLoading ? (
+          <p className="text-sm text-gray-500">加载中...</p>
+        ) : Object.keys(plannedByDate).length === 0 ? (
           <p className="text-sm text-gray-500">还没有安排日程</p>
         ) : (
           <div className="space-y-6">
@@ -425,7 +502,7 @@ export default function PlannerPage() {
                       return (
                         <div
                           key={plan.id}
-                          className="flex items-center justify-between border border-gray-200 rounded-md p-3 text-sm"
+                          className="flex items-start justify-between border border-gray-200 rounded-md p-3 text-sm"
                         >
                           <div className="space-y-1">
                             <div className="font-medium text-gray-900">
@@ -444,12 +521,27 @@ export default function PlannerPage() {
                               </div>
                             )}
                           </div>
-                          <button
-                            onClick={() => deletePlan(plan.id)}
-                            className="text-xs text-red-500 hover:text-red-700"
-                          >
-                            删除
-                          </button>
+                          <div className="flex flex-col gap-2">
+                            <button
+                              onClick={() => {
+                                setEditingId(plan.id)
+                                setSelectedDate(plan.date)
+                                setPlanTitle(plan.title)
+                                setPlanType(plan.type)
+                                setSelectedOutfit(plan.outfitId || '')
+                                setSelectedClothes(plan.clothingIds || [])
+                              }}
+                              className="text-xs text-gray-500 hover:text-gray-700"
+                            >
+                              编辑
+                            </button>
+                            <button
+                              onClick={() => deletePlan(plan.id)}
+                              className="text-xs text-red-500 hover:text-red-700"
+                            >
+                              删除
+                            </button>
+                          </div>
                         </div>
                       )
                     })}

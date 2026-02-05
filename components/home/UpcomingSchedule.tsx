@@ -18,20 +18,29 @@ type WearPlan = {
   createdAt: string
 }
 
-const STORAGE_KEY = 'wear-plans'
-
 export function UpcomingSchedule() {
   const [plans, setPlans] = useState<WearPlan[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    if (saved) {
+    const loadPlans = async () => {
       try {
-        setPlans(JSON.parse(saved))
+        const res = await fetch('/api/schedules')
+        const data = await res.json()
+        if (data.success) {
+          const mapped = (data.schedules || []).map((item: any) => ({
+            ...item,
+            id: item._id,
+          }))
+          setPlans(mapped)
+        }
       } catch (error) {
-        console.error('解析日程失败:', error)
+        console.error('加载日程失败:', error)
+      } finally {
+        setLoading(false)
       }
     }
+    loadPlans()
   }, [])
 
   const upcomingPlans = useMemo(() => {
@@ -55,7 +64,11 @@ export function UpcomingSchedule() {
         </Link>
       </div>
 
-      {upcomingPlans.length === 0 ? (
+      {loading ? (
+        <div className="p-6 text-center bg-white border border-gray-200 rounded-lg">
+          <p className="text-gray-500">加载中...</p>
+        </div>
+      ) : upcomingPlans.length === 0 ? (
         <div className="p-6 text-center bg-white border border-gray-200 rounded-lg">
           <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
           <p className="text-gray-500 mb-4">还没有日程安排</p>
