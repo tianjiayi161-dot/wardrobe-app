@@ -82,7 +82,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Match all paths except static files and images
-    '/((?!_next/static|_next/image|favicon.ico|public|icon-).*)',
+    // Match all paths except static files, images, and PWA files
+    '/((?!_next/static|_next/image|favicon.ico|public|icon-|manifest.webmanifest|sw.js).*)',
   ],
 }

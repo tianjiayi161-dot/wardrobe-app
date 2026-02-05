@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 白色背景 -->
+  <rect width="512" height="512" fill="#ffffff"/>
+
+  <!-- 衣架图标 (黑色) -->
+  <g fill="none" stroke="#000000" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 衣架顶部挂钩 -->
+    <circle cx="256" cy="120" r="20" fill="#000000"/>
+
+    <!-- 衣架主体 -->
+    <path d="M 256 140 L 256 180"/>
+    <path d="M 256 180 L 140 280 L 140 290"/>
+    <path d="M 256 180 L 372 280 L 372 290"/>
+    <path d="M 140 290 L 372 290"/>
+  </g>
+
+  <!-- "衣历" 文字 (黑色,简约字体) -->
+  <text x="256" y="380" font-family="PingFang SC, Microsoft YaHei, sans-serif"
+        font-size="80" font-weight="500" fill="#000000" text-anchor="middle">
+    衣历
+  </text>
+</svg>

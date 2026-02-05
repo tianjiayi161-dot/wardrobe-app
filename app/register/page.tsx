@@ -40,7 +40,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-gray-200">
         <div>
-          <h2 className="text-3xl font-bold text-center text-gray-900">What2Wear</h2>
+          <h2 className="text-3xl font-bold text-center text-gray-900">衣历</h2>
           <p className="mt-2 text-center text-sm text-gray-600">创建新账户</p>
         </div>
 

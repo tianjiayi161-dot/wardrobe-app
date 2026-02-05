@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import NavBar from "@/components/NavBar";
+import { ManifestRegister } from "@/components/ManifestRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,8 +16,21 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "What2Wear",
-  description: "智能衣橱管理与搭配推荐",
+  title: "衣历",
+  description: "智能衣橱管理应用",
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: '衣历',
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+  },
+  themeColor: '#000000',
 };
 
 export default function RootLayout({
@@ -29,6 +43,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen`}
       >
+        <ManifestRegister />
         <AuthProvider>
           <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
             <NavBar />
