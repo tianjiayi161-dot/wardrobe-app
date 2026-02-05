@@ -78,12 +78,12 @@ export function RecentFavorites() {
           <Link
             key={item._id}
             href={`/clothes/${item._id}`}
-            className="flex-shrink-0 w-32"
+            className="flex-shrink-0 w-28"
           >
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
               <div className="aspect-square relative bg-gray-50">
                 <img
-                  src={getThumbnailUrl(item.imageUrl, 300)}
+                  src={getThumbnailUrl(item.imageUrl, 360)}
                   alt={item.name}
                   className="w-full h-full object-cover"
                 />

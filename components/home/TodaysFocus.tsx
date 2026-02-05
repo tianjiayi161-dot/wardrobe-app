@@ -86,13 +86,13 @@ export function TodaysFocus() {
       <Link href={`/outfits/${outfit._id}`}>
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           {/* 搭配预览图 */}
-          <div className="relative aspect-[4/3] bg-gray-100">
+          <div className="relative aspect-square bg-gray-100">
             {outfitClothes.length > 0 ? (
               <div className="grid grid-cols-2 gap-2 p-2 h-full">
                 {outfitClothes.slice(0, 4).map((item, index) => (
                   <div key={index} className="relative bg-white rounded-lg overflow-hidden ring-1 ring-black/5">
                     <img
-                      src={getThumbnailUrl(item.imageUrl, 300)}
+                      src={getThumbnailUrl(item.imageUrl, 420)}
                       alt={item.name}
                       className="w-full h-full object-cover"
                     />

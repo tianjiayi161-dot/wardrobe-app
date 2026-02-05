@@ -32,7 +32,9 @@ const FULL_OUTFIT_CATEGORIES: Clothing['category'][] = [
 export default function CreateOutfitClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const initialMode = searchParams.get('ai') === 'true' ? 'ai' : 'manual'
+  const modeParam = searchParams.get('mode')
+  const initialMode =
+    modeParam === 'ai' || searchParams.get('ai') === 'true' ? 'ai' : 'manual'
   const [loading, setLoading] = useState(false)
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [selectedClothingIds, setSelectedClothingIds] = useState<string[]>([])

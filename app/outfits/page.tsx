@@ -112,6 +112,28 @@ export default function OutfitsPage() {
         </div>
       </div>
 
+      {/* 选择创建方式 */}
+      <div className="px-4 pt-4 pb-2">
+        <div className="grid grid-cols-2 gap-3">
+          <Link
+            href="/outfits/create?mode=manual"
+            className="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="text-sm text-gray-500 mb-1">自己搭配</div>
+            <div className="text-base font-semibold text-black">手动选择衣服</div>
+            <div className="mt-3 text-xs text-gray-500">给搭配命名 · 可自定义</div>
+          </Link>
+          <Link
+            href="/outfits/create?mode=ai"
+            className="bg-gray-50 border border-gray-200 rounded-2xl p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="text-sm text-gray-500 mb-1">AI 搭配</div>
+            <div className="text-base font-semibold text-black">一键生成</div>
+            <div className="mt-3 text-xs text-gray-500">基于衣橱与天气</div>
+          </Link>
+        </div>
+      </div>
+
       {/* AI生成卡片 */}
       <AIGenerateCard />
 

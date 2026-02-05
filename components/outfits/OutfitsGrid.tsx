@@ -60,7 +60,7 @@ export function OutfitsGrid({ outfits, clothes, loading }: OutfitsGridProps) {
           >
             <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
               {/* 搭配预览图 */}
-              <div className="aspect-square bg-gray-50 p-2">
+              <div className="aspect-[4/5] bg-gray-50 p-2">
                 {outfitClothes.length > 0 ? (
                   <div className="grid grid-cols-2 gap-2 h-full">
                     {outfitClothes.map((item, index) => (
@@ -69,7 +69,7 @@ export function OutfitsGrid({ outfits, clothes, loading }: OutfitsGridProps) {
                         className="relative bg-white rounded-lg overflow-hidden ring-1 ring-black/5"
                       >
                         <img
-                          src={getThumbnailUrl(item.imageUrl, 200)}
+                          src={getThumbnailUrl(item.imageUrl, 360)}
                           alt={item.name}
                           className="w-full h-full object-cover"
                         />
