@@ -26,8 +26,8 @@ export default function OutfitsPage() {
       if (outfitsRes.ok && clothesRes.ok) {
         const outfitsData = await outfitsRes.json()
         const clothesData = await clothesRes.json()
-        setOutfits(outfitsData)
-        setClothes(clothesData)
+        setOutfits(outfitsData.outfits ?? [])
+        setClothes(clothesData.clothes ?? [])
       }
     } catch (error) {
       console.error('Failed to fetch data:', error)

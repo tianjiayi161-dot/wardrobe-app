@@ -27,7 +27,7 @@ export default function ClothesPage() {
       const response = await fetch('/api/clothes')
       if (response.ok) {
         const data = await response.json()
-        setAllClothes(data)
+        setAllClothes(data.clothes ?? [])
       }
     } catch (error) {
       console.error('Failed to fetch clothes:', error)
