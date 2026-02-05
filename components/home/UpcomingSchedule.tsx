@@ -1,11 +1,50 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar } from 'lucide-react'
+import { Calendar, Sparkles } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { formatDate } from '@/lib/utils'
+
+type PlanType = 'outfit' | 'clothes'
+
+type WearPlan = {
+  id: string
+  date: string
+  title?: string
+  type: PlanType
+  outfitId?: string
+  clothingIds?: string[]
+  tips?: string[]
+  createdAt: string
+}
+
+const STORAGE_KEY = 'wear-plans'
 
 export function UpcomingSchedule() {
-  // 暂时显示占位符，等Stage 7实现日程功能后再填充真实数据
-  const hasSchedule = false
+  const [plans, setPlans] = useState<WearPlan[]>([])
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(STORAGE_KEY)
+    if (saved) {
+      try {
+        setPlans(JSON.parse(saved))
+      } catch (error) {
+        console.error('解析日程失败:', error)
+      }
+    }
+  }, [])
+
+  const upcomingPlans = useMemo(() => {
+    const today = new Date()
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    return plans
+      .filter((plan) => {
+        const date = new Date(plan.date)
+        return !Number.isNaN(date.getTime()) && date >= startOfToday
+      })
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .slice(0, 3)
+  }, [plans])
 
   return (
     <div className="px-4 pb-6">
@@ -16,7 +55,7 @@ export function UpcomingSchedule() {
         </Link>
       </div>
 
-      {!hasSchedule ? (
+      {upcomingPlans.length === 0 ? (
         <div className="p-6 text-center bg-white border border-gray-200 rounded-lg">
           <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300" />
           <p className="text-gray-500 mb-4">还没有日程安排</p>
@@ -29,7 +68,33 @@ export function UpcomingSchedule() {
         </div>
       ) : (
         <div className="space-y-3">
-          {/* 这里将来显示日程列表 */}
+          {upcomingPlans.map((plan) => (
+            <div
+              key={plan.id}
+              className="bg-white border border-gray-200 rounded-lg p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-xs text-gray-500 mb-1">
+                    {formatDate(plan.date)}
+                  </div>
+                  <div className="text-sm font-semibold text-black">
+                    {plan.title || (plan.type === 'outfit' ? '搭配安排' : '衣服组合')}
+                  </div>
+                </div>
+                <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                  {plan.type === 'outfit' ? '搭配' : '衣服'}
+                </span>
+              </div>
+
+              {plan.tips && plan.tips.length > 0 && (
+                <div className="mt-3 flex items-start gap-2 text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-md p-2">
+                  <Sparkles size={14} className="mt-0.5 text-gray-500" />
+                  <span>AI提示：{plan.tips.join('；')}</span>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

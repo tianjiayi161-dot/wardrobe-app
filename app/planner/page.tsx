@@ -10,13 +10,50 @@ type PlanType = 'outfit' | 'clothes'
 type WearPlan = {
   id: string
   date: string
+  title: string
   type: PlanType
   outfitId?: string
   clothingIds?: string[]
+  tips?: string[]
   createdAt: string
 }
 
 const STORAGE_KEY = 'wear-plans'
+
+function buildPlanTips(params: {
+  title: string
+  clothingItems: Array<Clothing | undefined>
+}) {
+  const tips: string[] = []
+  const title = params.title.toLowerCase()
+  const categories = new Set(
+    params.clothingItems
+      .filter(Boolean)
+      .map((item) => (item as Clothing).category)
+  )
+
+  if (title.includes('雨') || title.includes('rain')) {
+    tips.push('有雨记得带伞')
+  }
+
+  if (categories.has('shirt')) {
+    tips.push('穿衬衫记得提前熨烫')
+  }
+
+  if (categories.has('shoes')) {
+    tips.push('鞋子材质选择耐脏或防水的')
+  }
+
+  if (categories.has('outerwear')) {
+    tips.push('出门前确认温差，外套别忘了')
+  }
+
+  if (tips.length === 0) {
+    tips.push('出门前看下天气，再决定配饰')
+  }
+
+  return tips.slice(0, 3)
+}
 
 export default function PlannerPage() {
   const [clothes, setClothes] = useState<Clothing[]>([])
@@ -24,6 +61,7 @@ export default function PlannerPage() {
   const [plans, setPlans] = useState<WearPlan[]>([])
 
   const [selectedDate, setSelectedDate] = useState('')
+  const [planTitle, setPlanTitle] = useState('')
   const [planType, setPlanType] = useState<PlanType>('outfit')
   const [selectedOutfit, setSelectedOutfit] = useState('')
   const [selectedClothes, setSelectedClothes] = useState<string[]>([])
@@ -95,16 +133,43 @@ export default function PlannerPage() {
       return
     }
 
+    const outfitName =
+      planType === 'outfit'
+        ? outfits.find((o) => o._id === selectedOutfit)?.name
+        : undefined
+
+    const selectedClothingItems =
+      planType === 'outfit'
+        ? outfits
+            .find((o) => o._id === selectedOutfit)
+            ?.clothingIds.map((id) => clothes.find((c) => c._id === id))
+            .filter(Boolean) || []
+        : selectedClothes
+            .map((id) => clothes.find((c) => c._id === id))
+            .filter(Boolean)
+
+    const resolvedTitle =
+      planTitle.trim() ||
+      (planType === 'outfit' ? outfitName || '搭配' : '衣服组合')
+
+    const tips = buildPlanTips({
+      title: resolvedTitle,
+      clothingItems: selectedClothingItems,
+    })
+
     const newPlan: WearPlan = {
       id: `${Date.now()}`,
       date: selectedDate,
+      title: resolvedTitle,
       type: planType,
       outfitId: planType === 'outfit' ? selectedOutfit : undefined,
       clothingIds: planType === 'clothes' ? selectedClothes : undefined,
+      tips,
       createdAt: new Date().toISOString(),
     }
 
     setPlans((prev) => [newPlan, ...prev])
+    setPlanTitle('')
     setSelectedOutfit('')
     setSelectedClothes([])
   }
@@ -140,6 +205,16 @@ export default function PlannerPage() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+            />
+          </div>
+          <div className="space-y-2 md:col-span-2">
+            <label className="text-sm font-medium text-gray-900">日程名称</label>
+            <input
+              type="text"
+              value={planTitle}
+              onChange={(e) => setPlanTitle(e.target.value)}
+              placeholder="例如：客户会议 / 朋友聚餐"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
             />
           </div>
@@ -254,13 +329,18 @@ export default function PlannerPage() {
                         >
                           <div className="space-y-1">
                             <div className="font-medium text-gray-900">
-                              {plan.type === 'outfit'
+                              {plan.title || (plan.type === 'outfit'
                                 ? `搭配：${outfitName || '未命名'}`
-                                : '衣服组合'}
+                                : '衣服组合')}
                             </div>
                             {plan.type === 'clothes' && (
                               <div className="text-gray-500 text-xs">
                                 {clothingNames.join(' / ') || '未选择衣服'}
+                              </div>
+                            )}
+                            {plan.tips && plan.tips.length > 0 && (
+                              <div className="text-xs text-gray-500">
+                                AI提示：{plan.tips.join('；')}
                               </div>
                             )}
                           </div>
