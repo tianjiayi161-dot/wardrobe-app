@@ -26,7 +26,7 @@ async function verifyToken(token: string): Promise<{ userId: string } | null> {
   }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl
 
