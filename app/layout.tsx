@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
-import NavBar from "@/components/NavBar";
+import { BottomNav } from "@/components/BottomNav";
 import { ManifestRegister } from "@/components/ManifestRegister";
 
 const geistSans = Geist({
@@ -45,12 +45,10 @@ export default function RootLayout({
       >
         <ManifestRegister />
         <AuthProvider>
-          <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-            <NavBar />
-          </nav>
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main className="pb-20 min-h-screen">
             {children}
           </main>
+          <BottomNav />
         </AuthProvider>
       </body>
     </html>
