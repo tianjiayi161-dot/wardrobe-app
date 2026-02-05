@@ -12,6 +12,7 @@
   --secondary: #f5f5f5;
   --muted: #f5f5f5;
   --accent: #000000;
+  --brand: #e11d48;
 
   /* 灰度色阶 */
   --gray-50: #fafafa;
@@ -45,6 +46,7 @@
     --secondary: #1a1a1a;
     --muted: #1a1a1a;
     --accent: #ffffff;
+    --brand: #e11d48;
   }
 }
 

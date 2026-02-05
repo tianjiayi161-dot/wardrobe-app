@@ -69,7 +69,7 @@ export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) 
             href={`/clothes?category=${encodeURIComponent(group.category)}`}
             className="group"
           >
-            <div className="relative aspect-square">
+            <div className="relative aspect-square w-28 mx-auto">
               {previewItems.map((item, index) => {
                 const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1]
                 return (
@@ -94,16 +94,13 @@ export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) 
                 <div className="absolute inset-0 bg-white border-2 border-black rounded-2xl" />
               )}
 
-              <div className="absolute top-2 right-2 z-10 bg-black text-white text-xs px-2 py-1 rounded-full">
-                {group.items.length}
+              <div className="absolute top-2 right-2 z-10 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+                {group.items.length}件
               </div>
             </div>
 
             <div className="mt-3 text-center">
               <p className="text-sm font-semibold text-black">{group.label}</p>
-              <p className="text-xs text-gray-500 mt-1">
-                {group.items.length} 件
-              </p>
             </div>
           </Link>
         )

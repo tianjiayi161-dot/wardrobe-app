@@ -32,7 +32,7 @@ export function RecentFavorites() {
   if (loading) {
     return (
       <div className="px-4 pb-4">
-        <h2 className="text-lg font-semibold text-black mb-3">最近收藏</h2>
+        <h2 className="text-lg font-semibold text-black mb-3">心动单品</h2>
         <div className="flex gap-3 overflow-x-auto pb-2">
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex-shrink-0 w-32">
@@ -50,7 +50,7 @@ export function RecentFavorites() {
   if (clothes.length === 0) {
     return (
       <div className="px-4 pb-4">
-        <h2 className="text-lg font-semibold text-black mb-3">最近收藏</h2>
+        <h2 className="text-lg font-semibold text-black mb-3">心动单品</h2>
         <div className="p-6 text-center bg-white border border-gray-200 rounded-lg">
           <p className="text-gray-500 mb-4">衣橱还是空的</p>
           <Link
@@ -67,7 +67,7 @@ export function RecentFavorites() {
   return (
     <div className="px-4 pb-4">
       <div className="flex justify-between items-center mb-3">
-        <h2 className="text-lg font-semibold text-black">最近收藏</h2>
+        <h2 className="text-lg font-semibold text-black">心动单品</h2>
         <Link href="/clothes" className="text-sm text-gray-600 hover:text-black">
           查看全部 →
         </Link>

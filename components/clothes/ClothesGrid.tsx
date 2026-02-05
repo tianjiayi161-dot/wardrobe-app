@@ -44,7 +44,7 @@ export function ClothesGrid({ clothes, loading }: ClothesGridProps) {
         <Link
           key={item._id}
           href={`/clothes/${item._id}`}
-          className="group"
+          className="group transition-transform active:scale-95"
         >
           <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow w-28 mx-auto">
             {/* 衣服图片 */}

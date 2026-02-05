@@ -52,7 +52,7 @@ export function TodaysFocus() {
   if (loading) {
     return (
       <div className="px-4 pb-4">
-        <h2 className="text-lg font-semibold text-black mb-3">今日焦点</h2>
+        <h2 className="text-lg font-semibold text-black mb-3">穿搭灵感集</h2>
         <Card className="p-4">
           <div className="animate-pulse">
             <div className="h-48 bg-gray-200 rounded-lg mb-3"></div>
@@ -66,7 +66,7 @@ export function TodaysFocus() {
   if (!outfit) {
     return (
       <div className="px-4 pb-4">
-        <h2 className="text-lg font-semibold text-black mb-3">今日焦点</h2>
+        <h2 className="text-lg font-semibold text-black mb-3">穿搭灵感集</h2>
         <Card className="p-6 text-center">
           <p className="text-gray-500 mb-4">还没有搭配</p>
           <Link
@@ -82,7 +82,7 @@ export function TodaysFocus() {
 
   return (
     <div className="px-4 pb-4">
-      <h2 className="text-lg font-semibold text-black mb-3">今日焦点</h2>
+      <h2 className="text-lg font-semibold text-black mb-3">穿搭灵感集</h2>
       <Link href={`/outfits/${outfit._id}`}>
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           {/* 搭配预览图（与最近收藏同尺寸） */}

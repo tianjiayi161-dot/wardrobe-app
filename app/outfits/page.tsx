@@ -61,10 +61,10 @@ export default function OutfitsPage() {
   }
 
   const filters = [
-    { key: 'all', label: 'All' },
-    { key: 'summer', label: 'Summer' },
-    { key: 'work', label: 'Work' },
-    { key: 'casual', label: 'Casual' },
+    { key: 'all', label: 'All ✨' },
+    { key: 'summer', label: 'Summer ☀️' },
+    { key: 'work', label: 'Work 💼' },
+    { key: 'casual', label: 'Casual 🧢' },
   ]
 
   const filteredOutfits = useMemo(() => {
