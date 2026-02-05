@@ -3,14 +3,17 @@ import { getCollection } from '@/lib/db'
 import { ObjectId } from 'mongodb'
 
 // PUT - 更新日程
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const userId = request.headers.get('x-user-id')
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await context.params
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
@@ -50,14 +53,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 }
 
 // DELETE - 删除日程
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const userId = request.headers.get('x-user-id')
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = params
+    const { id } = await context.params
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 })
     }
