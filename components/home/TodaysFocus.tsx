@@ -3,23 +3,38 @@
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import Link from 'next/link'
-import type { Outfit } from '@/types'
+import type { Outfit, Clothing } from '@/types'
 import { getThumbnailUrl } from '@/lib/utils'
 
 export function TodaysFocus() {
   const [outfit, setOutfit] = useState<Outfit | null>(null)
+  const [outfitClothes, setOutfitClothes] = useState<Clothing[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchTodayOutfit = async () => {
       try {
-        const response = await fetch('/api/outfits')
-        if (response.ok) {
-          const outfits = await response.json()
+        const [outfitsRes, clothesRes] = await Promise.all([
+          fetch('/api/outfits'),
+          fetch('/api/clothes')
+        ])
+
+        if (outfitsRes.ok && clothesRes.ok) {
+          const outfits = await outfitsRes.json()
+          const allClothes = await clothesRes.json()
+
           // 随机选择一个搭配作为今日推荐
           if (outfits.length > 0) {
             const randomIndex = Math.floor(Math.random() * outfits.length)
-            setOutfit(outfits[randomIndex])
+            const selectedOutfit = outfits[randomIndex]
+            setOutfit(selectedOutfit)
+
+            // 根据clothingIds筛选衣服
+            const clothesMap = new Map(allClothes.map((c: Clothing) => [c._id, c]))
+            const clothes = selectedOutfit.clothingIds
+              .map((id: string) => clothesMap.get(id))
+              .filter((c: Clothing | undefined): c is Clothing => c !== undefined)
+            setOutfitClothes(clothes)
           }
         }
       } catch (error) {
@@ -70,9 +85,9 @@ export function TodaysFocus() {
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
           {/* 搭配预览图 */}
           <div className="relative aspect-[3/4] bg-gray-100">
-            {outfit.clothingItems && outfit.clothingItems.length > 0 ? (
+            {outfitClothes.length > 0 ? (
               <div className="grid grid-cols-2 gap-1 p-2 h-full">
-                {outfit.clothingItems.slice(0, 4).map((item, index) => (
+                {outfitClothes.slice(0, 4).map((item, index) => (
                   <div key={index} className="relative bg-white rounded overflow-hidden">
                     <img
                       src={getThumbnailUrl(item.imageUrl, 300)}
