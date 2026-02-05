@@ -85,29 +85,31 @@ export function TodaysFocus() {
       <h2 className="text-lg font-semibold text-black mb-3">今日焦点</h2>
       <Link href={`/outfits/${outfit._id}`}>
         <Card className="overflow-hidden hover:shadow-md transition-shadow">
-          {/* 搭配预览图 */}
-          <div className="relative aspect-square bg-gray-100">
-            {outfitClothes.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2 p-2 h-full">
-                {outfitClothes.slice(0, 4).map((item, index) => (
-                  <div key={index} className="relative bg-white rounded-lg overflow-hidden ring-1 ring-black/5">
-                    <img
-                      src={getThumbnailUrl(item.imageUrl, 420)}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
+          {/* 搭配预览图（与最近收藏同尺寸） */}
+          {outfitClothes.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2 px-3 pt-3">
+              {outfitClothes.slice(0, 5).map((item, index) => (
+                <div key={index} className="flex-shrink-0 w-28">
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="aspect-square relative bg-gray-50">
+                      <img
+                        src={getThumbnailUrl(item.imageUrl, 360)}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-400">
-                <p>暂无图片</p>
-              </div>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-28 text-gray-400">
+              <p>暂无图片</p>
+            </div>
+          )}
 
           {/* 搭配信息 */}
-          <div className="p-4">
+          <div className="p-4 pt-2">
             <h3 className="font-semibold text-black mb-1">{outfit.name}</h3>
             {outfit.tags && outfit.tags.length > 0 && (
               <div className="flex gap-2 flex-wrap">

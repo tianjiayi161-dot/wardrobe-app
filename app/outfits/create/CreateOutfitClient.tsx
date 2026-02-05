@@ -176,6 +176,12 @@ export default function CreateOutfitClient() {
     }
   }
 
+  const isSubmitDisabled =
+    loading ||
+    (mode === 'manual'
+      ? selectedClothingIds.length === 0 || missingCategories.length > 0
+      : !selectedRecommendation || !formData.name.trim())
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -441,10 +447,10 @@ export default function CreateOutfitClient() {
           </button>
           <button
             type="submit"
-            disabled={loading || selectedClothingIds.length === 0 || missingCategories.length > 0}
+            disabled={isSubmitDisabled}
             className="flex-1 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? '创建中...' : '创建搭配'}
+            {loading ? '保存中...' : '保存搭配'}
           </button>
         </div>
       </form>
