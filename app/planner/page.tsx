@@ -20,20 +20,54 @@ type WearPlan = {
 
 const STORAGE_KEY = 'wear-plans'
 
+type WeatherData = {
+  temperature: number
+  condition: string
+  description: string
+  icon: string
+}
+
 function buildPlanTips(params: {
   title: string
   clothingItems: Array<Clothing | undefined>
+  weather?: WeatherData | null
 }) {
   const tips: string[] = []
   const title = params.title.toLowerCase()
+  const weather = params.weather
   const categories = new Set(
     params.clothingItems
       .filter(Boolean)
       .map((item) => (item as Clothing).category)
   )
+  const colors = new Set(
+    params.clothingItems
+      .filter(Boolean)
+      .flatMap((item) => (item as Clothing).colors || [])
+      .map((c) => c.toLowerCase())
+  )
+  const materialText = params.clothingItems
+    .filter(Boolean)
+    .map((item) => {
+      const c = item as Clothing
+      return `${c.name} ${(c.tags || []).join(' ')}`
+    })
+    .join(' ')
+    .toLowerCase()
 
   if (title.includes('雨') || title.includes('rain')) {
     tips.push('有雨记得带伞')
+  }
+
+  if (weather) {
+    if (weather.description?.includes('雨') || weather.description?.toLowerCase().includes('rain')) {
+      tips.push('天气预报有雨，建议带伞或选择防水外套')
+    }
+    if (weather.temperature <= 8) {
+      tips.push('气温偏低，注意保暖和叠穿')
+    } else if (weather.temperature >= 28) {
+      tips.push('天气偏热，选择透气材质并注意防晒')
+    }
   }
 
   if (categories.has('shirt')) {
@@ -48,11 +82,62 @@ function buildPlanTips(params: {
     tips.push('出门前确认温差，外套别忘了')
   }
 
+  if (materialText.includes('silk') || materialText.includes('丝') || materialText.includes('真丝')) {
+    tips.push('真丝材质避免雨天外出，注意防水')
+  }
+  if (materialText.includes('wool') || materialText.includes('羊毛')) {
+    tips.push('羊毛材质注意防潮，避免长时间淋雨')
+  }
+  if (materialText.includes('linen') || materialText.includes('亚麻')) {
+    tips.push('亚麻易皱，出门前可简单熨烫')
+  }
+  if (materialText.includes('leather') || materialText.includes('皮革')) {
+    tips.push('皮革遇雨及时擦拭，保持干燥')
+  }
+  if (materialText.includes('denim') || materialText.includes('牛仔')) {
+    tips.push('牛仔深色雨天更耐脏')
+  }
+
+  if (colors.has('white') || colors.has('白') || colors.has('米')) {
+    tips.push('浅色衣物雨天易脏，注意防护')
+  }
+  if (colors.has('black') || colors.has('黑')) {
+    tips.push('深色在晴天更吸热，注意散热')
+  }
+
   if (tips.length === 0) {
     tips.push('出门前看下天气，再决定配饰')
   }
 
   return tips.slice(0, 3)
+}
+
+function fetchTodayWeather(): Promise<WeatherData | null> {
+  return new Promise((resolve) => {
+    if (!('geolocation' in navigator)) {
+      resolve(null)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const res = await fetch(
+            `/api/weather?lat=${position.coords.latitude}&lon=${position.coords.longitude}`
+          )
+          if (!res.ok) {
+            resolve(null)
+            return
+          }
+          const data = await res.json()
+          resolve(data)
+        } catch (error) {
+          resolve(null)
+        }
+      },
+      () => resolve(null),
+      { timeout: 8000 }
+    )
+  })
 }
 
 export default function PlannerPage() {
@@ -117,7 +202,7 @@ export default function PlannerPage() {
     )
   }
 
-  const handleAddPlan = () => {
+  const handleAddPlan = async () => {
     if (!selectedDate) {
       alert('请选择日期')
       return
@@ -152,9 +237,23 @@ export default function PlannerPage() {
       planTitle.trim() ||
       (planType === 'outfit' ? outfitName || '搭配' : '衣服组合')
 
+    const isToday = (() => {
+      const today = new Date()
+      const selected = new Date(selectedDate)
+      if (Number.isNaN(selected.getTime())) return false
+      return (
+        selected.getFullYear() === today.getFullYear() &&
+        selected.getMonth() === today.getMonth() &&
+        selected.getDate() === today.getDate()
+      )
+    })()
+
+    const weather = isToday ? await fetchTodayWeather() : null
+
     const tips = buildPlanTips({
       title: resolvedTitle,
       clothingItems: selectedClothingItems,
+      weather,
     })
 
     const newPlan: WearPlan = {
@@ -207,6 +306,7 @@ export default function PlannerPage() {
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
             />
+            <p className="text-xs text-gray-500">天气提醒仅对当天生效</p>
           </div>
           <div className="space-y-2 md:col-span-2">
             <label className="text-sm font-medium text-gray-900">日程名称</label>
