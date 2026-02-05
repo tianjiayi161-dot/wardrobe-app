@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { Clothing } from '@/types'
-import { categoryMap } from '@/lib/utils'
+import { Clothing, AIRecommendation } from '@/types'
+import { categoryMap, getThumbnailUrl } from '@/lib/utils'
 
 const TOP_CATEGORIES: Clothing['category'][] = [
   'tshirt',
@@ -31,9 +31,15 @@ const FULL_OUTFIT_CATEGORIES: Clothing['category'][] = [
 
 export default function CreateOutfitPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialMode = searchParams.get('ai') === 'true' ? 'ai' : 'manual'
   const [loading, setLoading] = useState(false)
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [selectedClothingIds, setSelectedClothingIds] = useState<string[]>([])
+  const [mode, setMode] = useState<'manual' | 'ai'>(initialMode)
+  const [recommendations, setRecommendations] = useState<AIRecommendation[]>([])
+  const [selectedRecommendation, setSelectedRecommendation] = useState<AIRecommendation | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -105,27 +111,51 @@ export default function CreateOutfitPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (selectedClothingIds.length === 0) {
-      alert('请至少选择一件衣服')
-      return
-    }
+    if (mode === 'ai') {
+      if (!selectedRecommendation) {
+        alert('请先生成并选择一套AI搭配')
+        return
+      }
+      if (!formData.name.trim()) {
+        alert('请填写搭配名称')
+        return
+      }
+    } else {
+      if (selectedClothingIds.length === 0) {
+        alert('请至少选择一件衣服')
+        return
+      }
 
-    if (missingCategories.length > 0) {
-      alert(`请补齐以下品类：${missingCategories.map((c) => categoryMap[c]).join('、')}`)
-      return
+      if (missingCategories.length > 0) {
+        alert(`请补齐以下品类：${missingCategories.map((c) => categoryMap[c]).join('、')}`)
+        return
+      }
     }
 
     setLoading(true)
 
     try {
+      const payload =
+        mode === 'ai'
+          ? {
+              ...formData,
+              name: formData.name.trim(),
+              description: formData.description || selectedRecommendation?.description || '',
+              occasion: formData.occasion || selectedRecommendation?.occasion || '',
+              season: formData.season || selectedRecommendation?.season || '',
+              clothingIds: selectedRecommendation?.clothingIds || [],
+              isAIGenerated: true,
+            }
+          : {
+              ...formData,
+              clothingIds: selectedClothingIds,
+              isAIGenerated: false,
+            }
+
       const response = await fetch('/api/outfits', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          clothingIds: selectedClothingIds,
-          isAIGenerated: false,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
@@ -146,9 +176,132 @@ export default function CreateOutfitPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">创建搭配</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">创建搭配</h1>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setMode('manual')}
+            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+              mode === 'manual'
+                ? 'bg-black text-white border-black'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            自己搭配
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('ai')}
+            className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+              mode === 'ai'
+                ? 'bg-black text-white border-black'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            AI搭配
+          </button>
+        </div>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {mode === 'ai' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">AI 生成搭配</h2>
+              <button
+                type="button"
+                onClick={async () => {
+                  setAiLoading(true)
+                  try {
+                    const res = await fetch('/api/recommend', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ count: 4 }),
+                    })
+                    const data = await res.json()
+                    if (data.success) {
+                      setRecommendations(data.recommendations)
+                      const first = data.recommendations[0]
+                      setSelectedRecommendation(first || null)
+                      if (first) {
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: prev.name || first.outfitName || '',
+                          description: prev.description || first.description || '',
+                          occasion: prev.occasion || first.occasion || '',
+                          season: prev.season || first.season || '',
+                        }))
+                      }
+                    } else {
+                      alert(data.error || '生成失败')
+                    }
+                  } catch (error) {
+                    console.error('生成失败:', error)
+                    alert('生成失败，请稍后重试')
+                  } finally {
+                    setAiLoading(false)
+                  }
+                }}
+                className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800 transition-colors disabled:bg-gray-400"
+                disabled={aiLoading}
+              >
+                {aiLoading ? '生成中...' : '生成搭配'}
+              </button>
+            </div>
+
+            {recommendations.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {recommendations.map((rec, idx) => {
+                  const isSelected = selectedRecommendation === rec
+                  return (
+                    <button
+                      type="button"
+                      key={`${rec.outfitName}-${idx}`}
+                      onClick={() => {
+                        setSelectedRecommendation(rec)
+                        setFormData((prev) => ({
+                          ...prev,
+                          name: rec.outfitName || prev.name,
+                          description: rec.description || prev.description,
+                          occasion: rec.occasion || prev.occasion,
+                          season: rec.season || prev.season,
+                        }))
+                      }}
+                      className={`text-left border rounded-lg p-2 transition-colors ${
+                        isSelected ? 'border-black ring-1 ring-black' : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="aspect-square bg-gray-50 rounded-md p-1">
+                        <div className="grid grid-cols-2 gap-1 h-full">
+                          {rec.clothingIds.slice(0, 4).map((id) => {
+                            const item = clothes.find((c) => c._id === id)
+                            if (!item) return null
+                            return (
+                              <div key={id} className="relative bg-white rounded overflow-hidden">
+                                <img
+                                  src={getThumbnailUrl(item.imageUrl, 200)}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <div className="mt-2">
+                        <p className="text-xs font-medium text-gray-900 truncate">
+                          {rec.outfitName || 'AI搭配'}
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 基本信息 */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">基本信息</h2>
@@ -218,7 +371,8 @@ export default function CreateOutfitPage() {
         </div>
 
         {/* 选择衣服 */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+        {mode === 'manual' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <h2 className="text-xl font-semibold text-gray-900">
               选择衣服 ({selectedClothingIds.length} 件已选)
@@ -272,6 +426,7 @@ export default function CreateOutfitPage() {
             </div>
           )}
         </div>
+        )}
 
         {/* 提交按钮 */}
         <div className="flex gap-4">

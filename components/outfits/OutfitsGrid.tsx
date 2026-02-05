@@ -58,15 +58,15 @@ export function OutfitsGrid({ outfits, clothes, loading }: OutfitsGridProps) {
             href={`/outfits/${outfit._id}`}
             className="group"
           >
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
               {/* 搭配预览图 */}
-              <div className="aspect-[3/4] bg-gray-50 p-2">
+              <div className="aspect-square bg-gray-50 p-2">
                 {outfitClothes.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-1 h-full">
+                  <div className="grid grid-cols-2 gap-2 h-full">
                     {outfitClothes.map((item, index) => (
                       <div
                         key={index}
-                        className="relative bg-white rounded overflow-hidden"
+                        className="relative bg-white rounded-lg overflow-hidden ring-1 ring-black/5"
                       >
                         <img
                           src={getThumbnailUrl(item.imageUrl, 200)}
@@ -84,7 +84,7 @@ export function OutfitsGrid({ outfits, clothes, loading }: OutfitsGridProps) {
 
                 {/* AI标记 */}
                 {outfit.isAIGenerated && (
-                  <div className="absolute top-3 left-3 bg-black text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                  <div className="absolute top-3 left-3 bg-black text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
                     <Sparkles size={12} />
                     AI
                   </div>

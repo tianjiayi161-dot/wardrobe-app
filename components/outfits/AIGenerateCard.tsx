@@ -5,18 +5,18 @@ import { Sparkles } from 'lucide-react'
 
 export function AIGenerateCard() {
   return (
-    <div className="px-4 pt-4 pb-3">
-      <div className="bg-gradient-to-br from-gray-900 to-gray-700 rounded-lg p-6 text-white">
-        <div className="flex items-center gap-2 mb-2">
-          <Sparkles size={24} />
-          <h3 className="text-lg font-semibold">AI智能搭配</h3>
+    <div className="px-4 pt-4 pb-2">
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
+        <div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center mb-3">
+          <Sparkles size={18} />
         </div>
-        <p className="text-sm text-gray-200 mb-4">
-          让AI根据你的衣橱帮你生成完美搭配
+        <h3 className="text-lg font-semibold text-black mb-1">AI 搭配</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          不确定怎么穿？让 AI 根据天气与场景生成搭配。
         </p>
         <Link
           href="/outfits/create?ai=true"
-          className="inline-block px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
+          className="inline-flex items-center justify-center w-full px-4 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
           生成搭配
         </Link>
