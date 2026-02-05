@@ -58,11 +58,11 @@ export function OutfitsGrid({ outfits, clothes, loading }: OutfitsGridProps) {
             href={`/outfits/${outfit._id}`}
             className="group"
           >
-            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
+            <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:shadow-md transition-shadow w-28 mx-auto">
               {/* 搭配预览图 */}
-              <div className="aspect-[4/5] bg-gray-50 p-2">
+              <div className="aspect-square bg-gray-50 p-1">
                 {outfitClothes.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2 h-full">
+                  <div className="grid grid-cols-2 gap-1 h-full">
                     {outfitClothes.map((item, index) => (
                       <div
                         key={index}
@@ -92,7 +92,7 @@ export function OutfitsGrid({ outfits, clothes, loading }: OutfitsGridProps) {
               </div>
 
               {/* 搭配信息 */}
-              <div className="p-3">
+              <div className="p-2">
                 <p className="text-sm font-medium text-black truncate group-hover:text-gray-700 transition-colors">
                   {outfit.name}
                 </p>

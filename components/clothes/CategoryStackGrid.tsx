@@ -75,7 +75,7 @@ export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) 
                 return (
                   <div
                     key={item._id}
-                    className="absolute inset-0 bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm"
+                    className="absolute inset-0 bg-white border-2 border-black rounded-2xl overflow-hidden"
                     style={{
                       transform: `translate(${offset.x}px, ${offset.y}px) rotate(${offset.rotate}deg)`,
                       zIndex: offset.z,
@@ -91,7 +91,7 @@ export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) 
               })}
 
               {previewItems.length === 0 && (
-                <div className="absolute inset-0 bg-gray-100 border border-gray-200 rounded-2xl" />
+                <div className="absolute inset-0 bg-white border-2 border-black rounded-2xl" />
               )}
 
               <div className="absolute top-2 right-2 z-10 bg-black text-white text-xs px-2 py-1 rounded-full">

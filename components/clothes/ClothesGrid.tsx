@@ -46,7 +46,7 @@ export function ClothesGrid({ clothes, loading }: ClothesGridProps) {
           href={`/clothes/${item._id}`}
           className="group"
         >
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow w-28 mx-auto">
             {/* 衣服图片 */}
             <div className="aspect-square relative bg-gray-50">
               <img
@@ -69,7 +69,7 @@ export function ClothesGrid({ clothes, loading }: ClothesGridProps) {
             </div>
 
             {/* 衣服信息 */}
-            <div className="p-3">
+            <div className="p-2">
               <p className="text-sm font-medium text-black truncate group-hover:text-gray-700 transition-colors">
                 {item.name}
               </p>
