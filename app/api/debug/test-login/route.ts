@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getCollection } from '@/lib/db'
 import bcrypt from 'bcryptjs'
 
+// Force Node.js runtime for bcrypt compatibility
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json()
