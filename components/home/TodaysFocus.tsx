@@ -20,8 +20,10 @@ export function TodaysFocus() {
         ])
 
         if (outfitsRes.ok && clothesRes.ok) {
-          const outfits = await outfitsRes.json()
-          const allClothes = await clothesRes.json()
+          const outfitsData = await outfitsRes.json()
+          const clothesData = await clothesRes.json()
+          const outfits = outfitsData.outfits ?? []
+          const allClothes = clothesData.clothes ?? []
 
           // 随机选择一个搭配作为今日推荐
           if (outfits.length > 0) {

@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { Clothing } from '@/types'
 import { SearchBar } from '@/components/clothes/SearchBar'
 import { FilterTabs, FilterType } from '@/components/clothes/FilterTabs'
 import { ClothesGrid } from '@/components/clothes/ClothesGrid'
 import { AddButton } from '@/components/clothes/AddButton'
+import { CategoryStackGrid } from '@/components/clothes/CategoryStackGrid'
 
 export default function ClothesPage() {
   const [allClothes, setAllClothes] = useState<Clothing[]>([])
@@ -83,6 +84,10 @@ export default function ClothesPage() {
     setFilteredClothes(filtered)
   }
 
+  const categoryViewClothes = useMemo(() => {
+    return filteredClothes
+  }, [filteredClothes])
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 搜索栏 */}
@@ -94,8 +99,12 @@ export default function ClothesPage() {
         onFilterChange={setActiveFilter}
       />
 
-      {/* 衣服网格 */}
-      <ClothesGrid clothes={filteredClothes} loading={loading} />
+      {/* 衣服内容 */}
+      {activeFilter === 'category' ? (
+        <CategoryStackGrid clothes={categoryViewClothes} loading={loading} />
+      ) : (
+        <ClothesGrid clothes={filteredClothes} loading={loading} />
+      )}
 
       {/* 添加按钮 */}
       <AddButton />

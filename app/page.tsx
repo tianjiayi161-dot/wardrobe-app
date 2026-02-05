@@ -9,11 +9,11 @@ export default function HomePage() {
       {/* 日期和天气 */}
       <DateWeatherHeader />
 
-      {/* 今日焦点搭配 */}
-      <TodaysFocus />
-
       {/* 最近收藏的衣服 */}
       <RecentFavorites />
+
+      {/* 今日焦点搭配 */}
+      <TodaysFocus />
 
       {/* 即将到来的日程 */}
       <UpcomingSchedule />

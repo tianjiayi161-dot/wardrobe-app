@@ -16,7 +16,7 @@ export function RecentFavorites() {
         if (response.ok) {
           const data = await response.json()
           // 获取最近添加的5件衣服
-          const recent = data.slice(0, 5)
+          const recent = (data.clothes ?? []).slice(0, 5)
           setClothes(recent)
         }
       } catch (error) {

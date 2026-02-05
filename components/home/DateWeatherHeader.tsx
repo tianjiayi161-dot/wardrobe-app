@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getWeatherEmoji, getClothingAdvice } from '@/lib/weather'
+import { User } from 'lucide-react'
 
 interface WeatherData {
   temperature: number
@@ -85,11 +86,23 @@ export function DateWeatherHeader() {
 
   return (
     <div className="px-4 pt-6 pb-4">
+      {/* 顶部标题 */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-black">衣历</h1>
+        <button
+          type="button"
+          aria-label="个人中心"
+          className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-700"
+        >
+          <User size={18} />
+        </button>
+      </div>
+
       {/* 日期 */}
       <div className="mb-3">
-        <h1 className="text-3xl font-bold text-black">
+        <h2 className="text-3xl font-bold text-black">
           {month}{day}日
-        </h1>
+        </h2>
         <p className="text-sm text-gray-600 mt-1">{weekday}</p>
       </div>
 
