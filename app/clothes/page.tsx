@@ -8,6 +8,7 @@ import { ClothesGrid } from '@/components/clothes/ClothesGrid'
 import { AddButton } from '@/components/clothes/AddButton'
 import { CategoryStackGrid } from '@/components/clothes/CategoryStackGrid'
 import { PageHeader } from '@/components/PageHeader'
+import { ArrowDown, ArrowUp } from 'lucide-react'
 
 export default function ClothesPage() {
   const [allClothes, setAllClothes] = useState<Clothing[]>([])
@@ -15,6 +16,8 @@ export default function ClothesPage() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterType>('time')
+  const [sortKey, setSortKey] = useState<'time' | 'wear'>('time')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
 
   useEffect(() => {
     fetchClothes()
@@ -53,23 +56,22 @@ export default function ClothesPage() {
     }
 
     // 筛选类型
-    switch (activeFilter) {
-      case 'time':
+    if (activeFilter === 'category') {
+      filtered.sort((a, b) => {
+        if (a.category !== b.category) {
+          return a.category.localeCompare(b.category)
+        }
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      })
+    } else {
+      if (sortKey === 'time') {
         filtered.sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         )
-        break
-      case 'wear':
-        filtered.sort((a, b) => (b.wearCount || 0) - (a.wearCount || 0))
-        break
-      case 'category':
-        filtered.sort((a, b) => {
-          if (a.category !== b.category) {
-            return a.category.localeCompare(b.category)
-          }
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        })
-        break
+      } else {
+        filtered.sort((a, b) => (a.wearCount || 0) - (b.wearCount || 0))
+      }
+      if (sortDir === 'desc') filtered.reverse()
     }
 
     setFilteredClothes(filtered)
@@ -90,6 +92,43 @@ export default function ClothesPage() {
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
       />
+
+      {activeFilter !== 'category' && (
+        <div className="px-4 pb-3 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSortKey('time')}
+            className={`px-3 py-2 rounded-md text-sm border flex items-center gap-2 ${
+              sortKey === 'time'
+                ? 'bg-[color:#E6007E] text-white border-[color:#E6007E]'
+                : 'bg-white text-gray-700 border-gray-200'
+            }`}
+          >
+            按时间
+            {sortKey === 'time' && (sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortKey('wear')}
+            className={`px-3 py-2 rounded-md text-sm border flex items-center gap-2 ${
+              sortKey === 'wear'
+                ? 'bg-[color:#E6007E] text-white border-[color:#E6007E]'
+                : 'bg-white text-gray-700 border-gray-200'
+            }`}
+          >
+            按穿着
+            {sortKey === 'wear' && (sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
+            className="ml-auto px-3 py-2 rounded-md text-sm border bg-white text-gray-700 border-gray-200 flex items-center gap-2"
+          >
+            {sortDir === 'asc' ? '升序' : '降序'}
+            {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+          </button>
+        </div>
+      )}
 
       {/* 衣服内容 */}
       {activeFilter === 'category' ? (

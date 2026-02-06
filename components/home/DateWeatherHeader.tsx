@@ -5,6 +5,7 @@ import { getWeatherEmoji, getClothingAdvice } from '@/lib/weather'
 import { User } from 'lucide-react'
 import Link from 'next/link'
 import { BrandLogo } from '@/components/BrandLogo'
+import { useAuth } from '@/lib/auth-context'
 
 interface WeatherData {
   temperature: number
@@ -14,10 +15,12 @@ interface WeatherData {
 }
 
 export function DateWeatherHeader() {
+  const { user } = useAuth()
   const [date, setDate] = useState<Date>(new Date())
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [avatarError, setAvatarError] = useState(false)
 
   // 更新日期
   useEffect(() => {
@@ -100,9 +103,18 @@ export function DateWeatherHeader() {
         <Link
           href="/account"
           aria-label="账号管理"
-          className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-700"
+          className="w-9 h-9 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-700 z-50 overflow-hidden"
         >
-          <User size={18} />
+          {user?.avatar && !avatarError ? (
+            <img
+              src={user.avatar}
+              alt="avatar"
+              className="w-9 h-9 object-cover"
+              onError={() => setAvatarError(true)}
+            />
+          ) : (
+            <User size={18} />
+          )}
         </Link>
       </div>
 
@@ -116,39 +128,33 @@ export function DateWeatherHeader() {
 
       {/* 天气 */}
       {loading ? (
-        <div className="flex items-center gap-3 text-gray-400">
+        <div className="flex flex-row items-center text-gray-400">
           <div className="text-2xl">🌤️</div>
-          <div>
+          <div className="ml-4">
             <p className="text-sm">正在和天空对话…</p>
           </div>
         </div>
       ) : weather ? (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-row items-center">
           <div className="text-3xl">
             {getWeatherEmoji(weather.icon)}
           </div>
-          <div>
+          <div className="ml-4">
             <p className="text-xl font-semibold text-black">
               {weather.temperature}°C
             </p>
             <p className="text-sm text-gray-600">{weather.description}</p>
           </div>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 text-gray-400">
-          <div className="text-2xl">🌤️</div>
-          <div>
-            <p className="text-sm">无法获取天气信息</p>
+          <div className="ml-4 text-sm text-gray-700">
+            💡 {getClothingAdvice(weather.temperature, weather.condition)}
           </div>
         </div>
-      )}
-
-      {/* 穿衣建议 */}
-      {weather && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-          <p className="text-sm text-gray-700">
-            💡 {getClothingAdvice(weather.temperature, weather.condition)}
-          </p>
+      ) : (
+        <div className="flex flex-row items-center text-gray-400">
+          <div className="text-2xl">🌤️</div>
+          <div className="ml-4">
+            <p className="text-sm">无法获取天气信息</p>
+          </div>
         </div>
       )}
     </div>
