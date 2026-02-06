@@ -216,7 +216,7 @@ export default function CreateOutfitClient() {
         {mode === 'ai' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-gray-900">AI 生成搭配</h2>
+            <h2 className="text-xl font-semibold text-gray-900">穿搭实验室</h2>
               <button
                 type="button"
                 onClick={async () => {
@@ -254,7 +254,7 @@ export default function CreateOutfitClient() {
                 className="px-4 py-2 bg-black text-white rounded-md text-sm hover:bg-gray-800 transition-colors disabled:bg-gray-400"
                 disabled={aiLoading}
               >
-                {aiLoading ? '生成中...' : '生成搭配'}
+                {aiLoading ? '生成中...' : '穿搭实验室'}
               </button>
             </div>
 

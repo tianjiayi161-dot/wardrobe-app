@@ -19,7 +19,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, date, type, outfitId, clothingIds, tips } = body || {}
+    const { title, date, type, outfitId, clothingIds, tips, repeatType, repeatDays } = body || {}
 
     if (!title || !date || !type) {
       return NextResponse.json({ error: '缺少必填字段' }, { status: 400 })
@@ -36,6 +36,8 @@ export async function PUT(
           outfitId: outfitId || undefined,
           clothingIds: Array.isArray(clothingIds) ? clothingIds : undefined,
           tips: Array.isArray(tips) ? tips : undefined,
+          repeatType: repeatType || 'none',
+          repeatDays: Array.isArray(repeatDays) ? repeatDays : [],
           updatedAt: new Date(),
         },
       }

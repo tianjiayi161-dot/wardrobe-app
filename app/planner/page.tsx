@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Clothing, Outfit } from '@/types'
-import { categoryMap, formatDate } from '@/lib/utils'
+import { categoryMap, formatDate, getThumbnailUrl } from '@/lib/utils'
 
 type PlanType = 'outfit' | 'clothes'
+type RepeatType = 'none' | 'daily' | 'workdays' | 'custom'
 
 type WearPlan = {
   id: string
@@ -16,7 +17,14 @@ type WearPlan = {
   outfitId?: string
   clothingIds?: string[]
   tips?: string[]
+  repeatType?: RepeatType
+  repeatDays?: number[]
   createdAt: string
+}
+
+type WearPlanInstance = WearPlan & {
+  instanceDate: string
+  baseId: string
 }
 
 type WeatherData = {
@@ -139,6 +147,45 @@ function fetchTodayWeather(): Promise<WeatherData | null> {
   })
 }
 
+function startOfWeek(date: Date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  const diff = (day === 0 ? -6 : 1) - day
+  d.setDate(d.getDate() + diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function endOfWeek(date: Date) {
+  const start = startOfWeek(date)
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  end.setHours(23, 59, 59, 999)
+  return end
+}
+
+function startOfMonth(date: Date) {
+  const d = new Date(date.getFullYear(), date.getMonth(), 1)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function endOfMonth(date: Date) {
+  const d = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+  d.setHours(23, 59, 59, 999)
+  return d
+}
+
+function toDateKey(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function addDays(date: Date, days: number) {
+  const d = new Date(date)
+  d.setDate(d.getDate() + days)
+  return d
+}
+
 export default function PlannerPage() {
   const [clothes, setClothes] = useState<Clothing[]>([])
   const [outfits, setOutfits] = useState<Outfit[]>([])
@@ -151,6 +198,9 @@ export default function PlannerPage() {
   const [selectedOutfit, setSelectedOutfit] = useState('')
   const [selectedClothes, setSelectedClothes] = useState<string[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
+  const [repeatType, setRepeatType] = useState<RepeatType>('none')
+  const [repeatDays, setRepeatDays] = useState<number[]>([])
 
   useEffect(() => {
     const loadData = async () => {
@@ -194,16 +244,96 @@ export default function PlannerPage() {
   }, [])
 
   const plannedByDate = useMemo(() => {
-    const grouped: Record<string, WearPlan[]> = {}
-    plans
-      .slice()
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    const today = new Date()
+    const rangeStart = viewMode === 'week' ? startOfWeek(today) : startOfMonth(today)
+    const rangeEnd = viewMode === 'week' ? endOfWeek(today) : endOfMonth(today)
+
+    const instances: WearPlanInstance[] = []
+
+    for (const plan of plans) {
+      const baseDate = new Date(plan.date)
+      if (Number.isNaN(baseDate.getTime())) continue
+      const repeat = plan.repeatType || 'none'
+
+      if (repeat === 'none') {
+        if (baseDate >= rangeStart && baseDate <= rangeEnd) {
+          instances.push({
+            ...plan,
+            instanceDate: plan.date,
+            baseId: plan.id,
+          })
+        }
+        continue
+      }
+
+      const startDate = baseDate > rangeStart ? baseDate : rangeStart
+      for (
+        let d = new Date(startDate);
+        d <= rangeEnd;
+        d = addDays(d, 1)
+      ) {
+        if (d < baseDate) continue
+        const dow = d.getDay()
+        if (repeat === 'daily') {
+          instances.push({
+            ...plan,
+            instanceDate: toDateKey(d),
+            baseId: plan.id,
+          })
+        } else if (repeat === 'workdays') {
+          if (dow >= 1 && dow <= 5) {
+            instances.push({
+              ...plan,
+              instanceDate: toDateKey(d),
+              baseId: plan.id,
+            })
+          }
+        } else if (repeat === 'custom') {
+          if (plan.repeatDays && plan.repeatDays.includes(dow)) {
+            instances.push({
+              ...plan,
+              instanceDate: toDateKey(d),
+              baseId: plan.id,
+            })
+          }
+        }
+      }
+    }
+
+    const grouped: Record<string, WearPlanInstance[]> = {}
+    instances
+      .sort((a, b) => a.instanceDate.localeCompare(b.instanceDate))
       .forEach((plan) => {
-        grouped[plan.date] = grouped[plan.date] || []
-        grouped[plan.date].push(plan)
+        grouped[plan.instanceDate] = grouped[plan.instanceDate] || []
+        grouped[plan.instanceDate].push(plan)
       })
     return grouped
-  }, [plans])
+  }, [plans, viewMode])
+
+  const clothesById = useMemo(
+    () => new Map(clothes.map((item) => [item._id, item])),
+    [clothes]
+  )
+  const outfitsById = useMemo(
+    () => new Map(outfits.map((item) => [item._id, item])),
+    [outfits]
+  )
+
+  const resolvePlanThumbnail = (plan: WearPlan) => {
+    if (plan.type === 'outfit' && plan.outfitId) {
+      const outfit = outfitsById.get(plan.outfitId)
+      const first = outfit?.clothingIds?.[0]
+      if (first) {
+        const clothing = clothesById.get(first)
+        return clothing?.imageUrl || clothing?.thumbnail || null
+      }
+    }
+    if (plan.type === 'clothes' && plan.clothingIds && plan.clothingIds.length > 0) {
+      const clothing = clothesById.get(plan.clothingIds[0])
+      return clothing?.imageUrl || clothing?.thumbnail || null
+    }
+    return null
+  }
 
   const handleToggleClothing = (id: string) => {
     setSelectedClothes((prev) =>
@@ -224,6 +354,11 @@ export default function PlannerPage() {
 
     if (planType === 'clothes' && selectedClothes.length === 0) {
       alert('请选择要穿的衣服')
+      return
+    }
+
+    if (repeatType === 'custom' && repeatDays.length === 0) {
+      alert('请选择自定义循环的星期')
       return
     }
 
@@ -272,6 +407,8 @@ export default function PlannerPage() {
       outfitId: planType === 'outfit' ? selectedOutfit : undefined,
       clothingIds: planType === 'clothes' ? selectedClothes : undefined,
       tips,
+      repeatType,
+      repeatDays: repeatType === 'custom' ? repeatDays : [],
     }
 
     try {
@@ -317,6 +454,8 @@ export default function PlannerPage() {
     setPlanTitle('')
     setSelectedOutfit('')
     setSelectedClothes([])
+    setRepeatType('none')
+    setRepeatDays([])
   }
 
   const deletePlan = async (id: string) => {
@@ -335,11 +474,48 @@ export default function PlannerPage() {
     }
   }
 
+  const copyToTomorrow = async (plan: WearPlanInstance) => {
+    const base = new Date(plan.instanceDate)
+    if (Number.isNaN(base.getTime())) return
+    const tomorrow = addDays(base, 1)
+    const payload = {
+      title: plan.title,
+      date: toDateKey(tomorrow),
+      type: plan.type,
+      outfitId: plan.outfitId,
+      clothingIds: plan.clothingIds || [],
+      tips: plan.tips || [],
+      repeatType: 'none',
+      repeatDays: [],
+    }
+    try {
+      const res = await fetch('/api/schedules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        alert(data.error || '复制失败')
+        return
+      }
+      const created: WearPlan = {
+        id: data.schedule._id,
+        ...payload,
+        createdAt: data.schedule.createdAt,
+      }
+      setPlans((prev) => [created, ...prev])
+    } catch (error) {
+      console.error('复制失败:', error)
+      alert('复制失败，请稍后重试')
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">穿搭日程</h1>
+          <h1 className="text-3xl font-bold text-gray-900">穿行计划</h1>
           <p className="text-sm text-gray-600 mt-1">
             规划每天穿什么，保持节奏。
           </p>
@@ -350,6 +526,31 @@ export default function PlannerPage() {
         >
           返回首页
         </Link>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setViewMode('week')}
+          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+            viewMode === 'week'
+              ? 'bg-black text-white border-black'
+              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          周视图
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewMode('month')}
+          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+            viewMode === 'month'
+              ? 'bg-black text-white border-black'
+              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+          }`}
+        >
+          月视图
+        </button>
       </div>
 
       <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
@@ -365,6 +566,8 @@ export default function PlannerPage() {
                 setPlanTitle('')
                 setSelectedOutfit('')
                 setSelectedClothes([])
+                setRepeatType('none')
+                setRepeatDays([])
               }}
               className="text-sm text-gray-500 hover:text-gray-900"
             >
@@ -432,6 +635,63 @@ export default function PlannerPage() {
           </div>
         </div>
 
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-gray-900">循环规则</label>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: 'none', label: '不循环' },
+              { key: 'workdays', label: '工作日' },
+              { key: 'daily', label: '每天' },
+              { key: 'custom', label: '自定义' },
+            ].map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => setRepeatType(item.key as RepeatType)}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                  repeatType === item.key
+                    ? 'bg-black text-white border-black'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+          {repeatType === 'custom' && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {[
+                { label: '一', value: 1 },
+                { label: '二', value: 2 },
+                { label: '三', value: 3 },
+                { label: '四', value: 4 },
+                { label: '五', value: 5 },
+                { label: '六', value: 6 },
+                { label: '日', value: 0 },
+              ].map((day) => (
+                <button
+                  key={day.value}
+                  type="button"
+                  onClick={() =>
+                    setRepeatDays((prev) =>
+                      prev.includes(day.value)
+                        ? prev.filter((d) => d !== day.value)
+                        : [...prev, day.value]
+                    )
+                  }
+                  className={`w-9 h-9 rounded-full text-sm border transition-colors ${
+                    repeatDays.includes(day.value)
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                  }`}
+                >
+                  {day.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {planType === 'outfit' ? (
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-900">选择搭配</label>
@@ -475,21 +735,22 @@ export default function PlannerPage() {
       </section>
 
       <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="text-xl font-semibold text-gray-900">日程列表</h2>
+        <h2 className="text-xl font-semibold text-gray-900">计划列表</h2>
         {plansLoading ? (
           <p className="text-sm text-gray-500">加载中...</p>
         ) : Object.keys(plannedByDate).length === 0 ? (
-          <p className="text-sm text-gray-500">还没有安排日程</p>
+          <p className="text-sm text-gray-500">还没有安排计划</p>
         ) : (
           <div className="space-y-6">
             {Object.entries(plannedByDate)
               .sort((a, b) => b[0].localeCompare(a[0]))
               .map(([date, dayPlans]) => (
                 <div key={date} className="space-y-3">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-gray-900 font-mono">
                     {formatDate(date)}
                   </div>
-                  <div className="space-y-2">
+                  <div className="relative pl-6 space-y-3">
+                    <div className="absolute left-2 top-0 bottom-0 w-px bg-[color:var(--brand)]/40" />
                     {dayPlans.map((plan) => {
                       const outfitName =
                         plan.outfitId &&
@@ -498,49 +759,75 @@ export default function PlannerPage() {
                         .map((id) => clothes.find((c) => c._id === id))
                         .filter(Boolean)
                         .map((c) => `${c?.name} · ${categoryMap[c?.category || ''] || ''}`)
+                      const thumbnail = resolvePlanThumbnail(plan)
 
                       return (
                         <div
-                          key={plan.id}
-                          className="flex items-start justify-between border border-gray-200 rounded-md p-3 text-sm"
+                          key={`${plan.baseId}-${plan.instanceDate}`}
+                          className="relative"
                         >
-                          <div className="space-y-1">
-                            <div className="font-medium text-gray-900">
-                              {plan.title || (plan.type === 'outfit'
-                                ? `搭配：${outfitName || '未命名'}`
-                                : '衣服组合')}
+                          <span className="absolute left-[-2px] top-5 w-2.5 h-2.5 bg-[color:var(--brand)] rounded-full" />
+                          <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3">
+                            <div className="space-y-1">
+                              <div className="text-xs text-gray-500 font-mono">
+                                {formatDate(plan.instanceDate)}
+                              </div>
+                              <div className="font-medium text-gray-900">
+                                {plan.title || (plan.type === 'outfit'
+                                  ? `搭配：${outfitName || '未命名'}`
+                                  : '衣服组合')}
+                              </div>
+                              {plan.type === 'clothes' && (
+                                <div className="text-gray-500 text-xs">
+                                  {clothingNames.join(' / ') || '未选择衣服'}
+                                </div>
+                              )}
+                              {plan.tips && plan.tips.length > 0 && (
+                                <div className="text-xs text-gray-500">
+                                  AI提示：{plan.tips.join('；')}
+                                </div>
+                              )}
                             </div>
-                            {plan.type === 'clothes' && (
-                              <div className="text-gray-500 text-xs">
-                                {clothingNames.join(' / ') || '未选择衣服'}
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden">
+                                {thumbnail ? (
+                                  <img
+                                    src={getThumbnailUrl(thumbnail, 200)}
+                                    alt={plan.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : null}
                               </div>
-                            )}
-                            {plan.tips && plan.tips.length > 0 && (
-                              <div className="text-xs text-gray-500">
-                                AI提示：{plan.tips.join('；')}
+                              <div className="flex flex-col gap-1">
+                                <button
+                                  onClick={() => copyToTomorrow(plan)}
+                                  className="text-xs text-gray-500 hover:text-gray-700"
+                                >
+                                  复制到明天
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setEditingId(plan.baseId)
+                                    setSelectedDate(plan.date)
+                                    setPlanTitle(plan.title)
+                                    setPlanType(plan.type)
+                                    setSelectedOutfit(plan.outfitId || '')
+                                    setSelectedClothes(plan.clothingIds || [])
+                                    setRepeatType(plan.repeatType || 'none')
+                                    setRepeatDays(plan.repeatDays || [])
+                                  }}
+                                  className="text-xs text-gray-500 hover:text-gray-700"
+                                >
+                                  编辑
+                                </button>
+                                <button
+                                  onClick={() => deletePlan(plan.baseId)}
+                                  className="text-xs text-red-500 hover:text-red-700"
+                                >
+                                  删除
+                                </button>
                               </div>
-                            )}
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingId(plan.id)
-                                setSelectedDate(plan.date)
-                                setPlanTitle(plan.title)
-                                setPlanType(plan.type)
-                                setSelectedOutfit(plan.outfitId || '')
-                                setSelectedClothes(plan.clothingIds || [])
-                              }}
-                              className="text-xs text-gray-500 hover:text-gray-700"
-                            >
-                              编辑
-                            </button>
-                            <button
-                              onClick={() => deletePlan(plan.id)}
-                              className="text-xs text-red-500 hover:text-red-700"
-                            >
-                              删除
-                            </button>
+                            </div>
                           </div>
                         </div>
                       )

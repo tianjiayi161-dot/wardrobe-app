@@ -18,7 +18,7 @@ export function AIGenerateCard() {
           href="/outfits/create?ai=true"
           className="inline-flex items-center justify-center w-full px-4 py-2.5 bg-black text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
         >
-          生成搭配
+          穿搭实验室
         </Link>
       </div>
     </div>
