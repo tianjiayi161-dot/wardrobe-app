@@ -99,14 +99,14 @@ export default function OutfitsPage() {
   }
 
   const filters = [
-    { key: 'all', label: 'All ✨' },
-    { key: 'daily', label: '日常 🌿' },
-    { key: 'commute', label: '通勤 💼' },
-    { key: 'sport', label: '运动 🏃' },
-    { key: 'date', label: '约会 💗' },
-    { key: 'formal', label: '正式 🎩' },
-    { key: 'recent', label: '最近常穿 🔥' },
-    { key: 'unused', label: '压箱底 🧊' },
+    { key: 'all', label: 'All' },
+    { key: 'daily', label: '日常' },
+    { key: 'commute', label: '通勤' },
+    { key: 'sport', label: '运动' },
+    { key: 'date', label: '约会' },
+    { key: 'formal', label: '正式' },
+    { key: 'recent', label: '最近常穿' },
+    { key: 'unused', label: '压箱底' },
   ]
 
   const filteredOutfits = useMemo(() => {
@@ -192,7 +192,7 @@ export default function OutfitsPage() {
             <button
               key={filter.key}
               onClick={() => setActiveFilter(filter.key)}
-              className={`px-4 py-2 min-w-[92px] rounded-md text-sm font-medium whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
+              className={`px-4 py-1.5 min-w-[92px] rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center justify-center ${
                 activeFilter === filter.key
                   ? 'bg-[color:#E6007E] text-white border border-[color:#E6007E]'
                   : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -205,7 +205,7 @@ export default function OutfitsPage() {
             <button
               key={scene}
               onClick={() => setActiveFilter(scene)}
-              className={`px-4 py-2 min-w-[92px] rounded-md text-sm font-medium whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
+              className={`px-4 py-1.5 min-w-[92px] rounded-lg text-sm font-medium whitespace-nowrap transition-colors flex items-center justify-center ${
                 activeFilter === scene
                   ? 'bg-[color:#E6007E] text-white border border-[color:#E6007E]'
                   : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'

@@ -94,38 +94,18 @@ export default function ClothesPage() {
       />
 
       {activeFilter !== 'category' && (
-        <div className="px-4 pb-3 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setSortKey('time')}
-            className={`px-3 py-2 rounded-md text-sm border flex items-center gap-2 ${
-              sortKey === 'time'
-                ? 'bg-[color:#E6007E] text-white border-[color:#E6007E]'
-                : 'bg-white text-gray-700 border-gray-200'
-            }`}
-          >
-            按时间
-            {sortKey === 'time' && (sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSortKey('wear')}
-            className={`px-3 py-2 rounded-md text-sm border flex items-center gap-2 ${
-              sortKey === 'wear'
-                ? 'bg-[color:#E6007E] text-white border-[color:#E6007E]'
-                : 'bg-white text-gray-700 border-gray-200'
-            }`}
-          >
-            按穿着
-            {sortKey === 'wear' && (sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}
-          </button>
+        <div className="px-4 pb-3 flex items-center">
           <button
             type="button"
             onClick={() => setSortDir((prev) => (prev === 'asc' ? 'desc' : 'asc'))}
             className="ml-auto px-3 py-2 rounded-md text-sm border bg-white text-gray-700 border-gray-200 flex items-center gap-2"
           >
             {sortDir === 'asc' ? '升序' : '降序'}
-            {sortDir === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />}
+            {sortDir === 'asc' ? (
+              <ArrowUp size={14} className="text-[#E6007E]" />
+            ) : (
+              <ArrowDown size={14} className="text-[#E6007E]" />
+            )}
           </button>
         </div>
       )}
