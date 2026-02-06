@@ -400,7 +400,16 @@ export default function PlannerPage() {
       weather,
     })
 
-    const payload = {
+    const payload: {
+      title: string
+      date: string
+      type: PlanType
+      outfitId?: string
+      clothingIds?: string[]
+      tips: string[]
+      repeatType: RepeatType
+      repeatDays: number[]
+    } = {
       title: resolvedTitle,
       date: selectedDate,
       type: planType,
