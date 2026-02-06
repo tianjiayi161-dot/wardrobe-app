@@ -9,6 +9,7 @@ export default function AccountPage() {
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState('')
   const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [savingPwd, setSavingPwd] = useState(false)
@@ -43,6 +44,48 @@ export default function AccountPage() {
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
               placeholder="https://..."
             />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm text-gray-600">上传头像</label>
+            <input
+              type="file"
+              accept="image/*"
+              className="w-full text-sm"
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                setUploading(true)
+                try {
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  const res = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData,
+                  })
+                  const data = await res.json()
+                  if (!data.success) {
+                    alert(data.error || '上传失败')
+                    return
+                  }
+                  setAvatar(data.imageUrl)
+                } catch (error) {
+                  console.error('上传失败:', error)
+                  alert('上传失败，请稍后重试')
+                } finally {
+                  setUploading(false)
+                }
+              }}
+            />
+            {uploading && (
+              <p className="text-xs text-gray-500">头像上传中…</p>
+            )}
+            {avatar && (
+              <img
+                src={avatar}
+                alt="头像预览"
+                className="w-16 h-16 rounded-full object-cover border border-gray-200"
+              />
+            )}
           </div>
           <button
             type="button"

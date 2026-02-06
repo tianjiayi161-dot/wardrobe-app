@@ -63,7 +63,6 @@ export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) 
     <div className="px-4 grid grid-cols-2 gap-4 pb-6">
       {grouped.map((group) => {
         const previewItems = group.items.slice(0, 3)
-        const isExpanded = expanded === group.category
         return (
           <Link
             key={group.category}
