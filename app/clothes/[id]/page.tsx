@@ -11,6 +11,15 @@ export default function ClothingDetailPage() {
   const params = useParams()
   const [clothing, setClothing] = useState<Clothing | null>(null)
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    name: '',
+    brand: '',
+    price: '',
+    colors: '',
+    wearCount: '',
+  })
 
   useEffect(() => {
     if (params.id) {
@@ -24,6 +33,13 @@ export default function ClothingDetailPage() {
       const data = await response.json()
       if (data.success) {
         setClothing(data.clothing)
+        setForm({
+          name: data.clothing.name || '',
+          brand: data.clothing.brand || '',
+          price: data.clothing.price?.toString() || '',
+          colors: (data.clothing.colors || []).join(', '),
+          wearCount: data.clothing.wearCount?.toString() || '0',
+        })
       } else {
         alert(data.error || '获取衣服详情失败')
       }
@@ -63,6 +79,13 @@ export default function ClothingDetailPage() {
         >
           ← 返回衣橱
         </Link>
+        <button
+          type="button"
+          onClick={() => setEditing((prev) => !prev)}
+          className="text-sm text-gray-600 hover:text-gray-900"
+        >
+          {editing ? '取消编辑' : '编辑'}
+        </button>
       </div>
 
       <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-6">
@@ -76,13 +99,104 @@ export default function ClothingDetailPage() {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-gray-900">{clothing.name}</h1>
-          <p className="text-sm text-gray-600">
-            {categoryMap[clothing.category] || clothing.category}
-          </p>
-          <p className="text-sm text-gray-500">
-            穿着次数：{clothing.wearCount} 次
-          </p>
+          {!editing ? (
+            <>
+              <h1 className="text-2xl font-bold text-gray-900">{clothing.name}</h1>
+              <p className="text-sm text-gray-600">
+                {categoryMap[clothing.category] || clothing.category}
+              </p>
+              <p className="text-sm text-gray-500">
+                穿着次数：{clothing.wearCount} 次
+              </p>
+            </>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">名称</label>
+                <input
+                  value={form.name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">品牌</label>
+                <input
+                  value={form.brand}
+                  onChange={(e) => setForm((prev) => ({ ...prev, brand: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">价格</label>
+                <input
+                  type="number"
+                  value={form.price}
+                  onChange={(e) => setForm((prev) => ({ ...prev, price: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">颜色（逗号分隔）</label>
+                <input
+                  value={form.colors}
+                  onChange={(e) => setForm((prev) => ({ ...prev, colors: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">穿着次数</label>
+                <input
+                  type="number"
+                  value={form.wearCount}
+                  onChange={(e) => setForm((prev) => ({ ...prev, wearCount: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="flex items-end">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={async () => {
+                    if (!clothing) return
+                    setSaving(true)
+                    try {
+                      const payload = {
+                        name: form.name.trim(),
+                        brand: form.brand.trim() || undefined,
+                        price: form.price ? Number(form.price) : undefined,
+                        colors: form.colors
+                          .split(/[,，]/)
+                          .map((c) => c.trim())
+                          .filter(Boolean),
+                        wearCount: form.wearCount ? Number(form.wearCount) : 0,
+                      }
+                      const res = await fetch(`/api/clothes/${clothing._id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                      })
+                      const data = await res.json()
+                      if (!data.success) {
+                        alert(data.error || '保存失败')
+                        return
+                      }
+                      setClothing(data.clothing)
+                      setEditing(false)
+                    } catch (error) {
+                      console.error('保存失败:', error)
+                      alert('保存失败，请稍后重试')
+                    } finally {
+                      setSaving(false)
+                    }
+                  }}
+                  className="w-full px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400"
+                >
+                  {saving ? '保存中...' : '保存修改'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-4 text-sm">

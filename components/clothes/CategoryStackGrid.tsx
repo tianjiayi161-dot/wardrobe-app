@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import type { Clothing } from '@/types'
 import { getThumbnailUrl, categoryMap } from '@/lib/utils'
 
@@ -16,6 +17,7 @@ const stackOffsets = [
 ]
 
 export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) {
+  const [expanded, setExpanded] = useState<string | null>(null)
   if (loading) {
     return (
       <div className="px-4 grid grid-cols-2 gap-4 pb-6">
@@ -63,46 +65,69 @@ export function CategoryStackGrid({ clothes, loading }: CategoryStackGridProps) 
     <div className="px-4 grid grid-cols-2 gap-4 pb-6">
       {grouped.map((group) => {
         const previewItems = group.items.slice(0, 3)
+        const isExpanded = expanded === group.category
         return (
-          <Link
-            key={group.category}
-            href={`/clothes?category=${encodeURIComponent(group.category)}`}
-            className="group"
-          >
-            <div className="relative aspect-square w-28 mx-auto">
-              {previewItems.map((item, index) => {
-                const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1]
-                return (
-                  <div
-                    key={item._id}
-                    className="absolute inset-0 bg-white border-2 border-black rounded-2xl overflow-hidden"
-                    style={{
-                      transform: `translate(${offset.x}px, ${offset.y}px) rotate(${offset.rotate}deg)`,
-                      zIndex: offset.z,
-                    }}
-                  >
-                    <img
-                      src={getThumbnailUrl(item.imageUrl, 500)}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )
-              })}
+          <div key={group.category} className="group">
+            <button
+              type="button"
+              onClick={() => setExpanded(isExpanded ? null : group.category)}
+              className="w-full"
+            >
+              <div className="relative aspect-square w-28 mx-auto">
+                {previewItems.map((item, index) => {
+                  const offset = stackOffsets[index] ?? stackOffsets[stackOffsets.length - 1]
+                  return (
+                    <div
+                      key={item._id}
+                      className="absolute inset-0 bg-white border-2 border-black rounded-2xl overflow-hidden"
+                      style={{
+                        transform: `translate(${offset.x}px, ${offset.y}px) rotate(${offset.rotate}deg)`,
+                        zIndex: offset.z,
+                      }}
+                    >
+                      <img
+                        src={getThumbnailUrl(item.imageUrl, 500)}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )
+                })}
 
-              {previewItems.length === 0 && (
-                <div className="absolute inset-0 bg-white border-2 border-black rounded-2xl" />
-              )}
+                {previewItems.length === 0 && (
+                  <div className="absolute inset-0 bg-white border-2 border-black rounded-2xl" />
+                )}
 
-              <div className="absolute top-2 right-2 z-10 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
-                {group.items.length}件
+                <div className="absolute top-2 right-2 z-10 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full backdrop-blur-sm">
+                  {group.items.length}件
+                </div>
               </div>
-            </div>
+            </button>
 
             <div className="mt-3 text-center">
               <p className="text-sm font-semibold text-black">{group.label}</p>
             </div>
-          </Link>
+
+            {isExpanded && (
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {group.items.map((item) => (
+                  <Link
+                    key={item._id}
+                    href={`/clothes/${item._id}`}
+                    className="block"
+                  >
+                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 border border-gray-200">
+                      <img
+                        src={getThumbnailUrl(item.imageUrl, 200)}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
         )
       })}
     </div>
