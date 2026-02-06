@@ -45,6 +45,8 @@ export async function POST(request: NextRequest) {
     }
 
     const collection = await getCollection('schedules')
+    const clothesCollection = await getCollection('clothes')
+    const outfitsCollection = await getCollection('outfits')
     const now = new Date()
     const result = await collection.insertOne({
       userId: new ObjectId(userId),
@@ -59,6 +61,30 @@ export async function POST(request: NextRequest) {
       createdAt: now,
       updatedAt: now,
     })
+
+    const resolveClothingIds = async (): Promise<string[]> => {
+      if (type === 'outfit' && outfitId) {
+        if (!ObjectId.isValid(outfitId)) return []
+        const outfit = await outfitsCollection.findOne({
+          _id: new ObjectId(outfitId),
+          userId: new ObjectId(userId),
+        })
+        return (outfit?.clothingIds as string[]) || []
+      }
+      if (type === 'clothes') {
+        return Array.isArray(clothingIds) ? clothingIds : []
+      }
+      return []
+    }
+
+    const clothingIdsToInc = await resolveClothingIds()
+    const objectIds = clothingIdsToInc.filter(ObjectId.isValid).map((id) => new ObjectId(id))
+    if (objectIds.length > 0) {
+      await clothesCollection.updateMany(
+        { _id: { $in: objectIds }, userId: new ObjectId(userId) },
+        { $inc: { wearCount: 1 } }
+      )
+    }
 
     return NextResponse.json({
       success: true,
