@@ -20,7 +20,11 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "衣历",
   description: "智能衣橱管理应用",
-  manifest: '/manifest.json',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: '/icon-512.png',
+    apple: '/apple-touch-icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
