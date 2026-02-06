@@ -14,7 +14,7 @@ export default function ClothesPage() {
   const [filteredClothes, setFilteredClothes] = useState<Clothing[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all')
+  const [activeFilter, setActiveFilter] = useState<FilterType>('time')
 
   useEffect(() => {
     fetchClothes()
@@ -54,25 +54,15 @@ export default function ClothesPage() {
 
     // 筛选类型
     switch (activeFilter) {
-      case 'all':
-        // 按时间倒序（最新的在前面）
+      case 'time':
         filtered.sort((a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )
         break
-      case 'recent':
-        // 只显示最近7天添加的
-        const sevenDaysAgo = new Date()
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-        filtered = filtered.filter(
-          (item) => new Date(item.createdAt) > sevenDaysAgo
-        )
-        filtered.sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
+      case 'wear':
+        filtered.sort((a, b) => (b.wearCount || 0) - (a.wearCount || 0))
         break
       case 'category':
-        // 按类别分组排序
         filtered.sort((a, b) => {
           if (a.category !== b.category) {
             return a.category.localeCompare(b.category)

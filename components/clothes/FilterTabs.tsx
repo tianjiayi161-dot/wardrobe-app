@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils'
 
-export type FilterType = 'all' | 'recent' | 'category'
+export type FilterType = 'time' | 'wear' | 'category'
 
 interface FilterTabsProps {
   activeFilter: FilterType
@@ -12,9 +12,9 @@ interface FilterTabsProps {
 
 export function FilterTabs({ activeFilter, onFilterChange, categories = [] }: FilterTabsProps) {
   const tabs = [
-    { value: 'all' as FilterType, label: '全部' },
-    { value: 'recent' as FilterType, label: '最近添加' },
-    { value: 'category' as FilterType, label: '按类别' },
+    { value: 'time' as FilterType, label: '按添加时间' },
+    { value: 'wear' as FilterType, label: '按穿着次数' },
+    { value: 'category' as FilterType, label: '按分类' },
   ]
 
   return (

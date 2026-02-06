@@ -7,12 +7,12 @@ export function BrandLogo({ className = '' }: { className?: string }) {
       aria-hidden="true"
     >
       <svg
-        className="w-3/5 h-3/5 text-black"
+        className="w-1/2 h-1/2 text-black"
         fill="none"
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="7"
+        strokeWidth="5"
         viewBox="0 0 100 100"
       >
         <path d="M50 24 V 10 A 7 7 0 0 1 64 10"></path>

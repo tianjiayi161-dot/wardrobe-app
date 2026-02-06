@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getWeatherEmoji, getClothingAdvice } from '@/lib/weather'
 import { User } from 'lucide-react'
+import Link from 'next/link'
 import { BrandLogo } from '@/components/BrandLogo'
 
 interface WeatherData {
@@ -96,13 +97,13 @@ export function DateWeatherHeader() {
             <p className="text-sm text-gray-500">衣序</p>
           </div>
         </div>
-        <button
-          type="button"
-          aria-label="个人中心"
+        <Link
+          href="/account"
+          aria-label="账号管理"
           className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-700"
         >
           <User size={18} />
-        </button>
+        </Link>
       </div>
 
       {/* 日期 */}
