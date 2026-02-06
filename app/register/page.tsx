@@ -39,16 +39,16 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-50 px-4">
-      <div className="w-full max-w-md pt-6">
-        <div className="flex items-center gap-3">
-          <BrandLogo className="w-12 h-12" />
-          <div>
-            <div className="text-xs text-gray-500">vibelog</div>
-            <h1 className="text-2xl font-bold text-gray-900">衣序</h1>
-          </div>
+      <div className="max-w-md w-full flex flex-col items-center pt-8 pb-4">
+        <div className="w-[120px] h-[120px] rounded-[22%] bg-white shadow-2xl flex items-center justify-center">
+          <BrandLogo className="w-[120px] h-[120px] bg-transparent border-0 shadow-none" />
+        </div>
+        <div className="mt-4 text-center">
+          <div className="text-xs text-gray-500">vibelog</div>
+          <h1 className="text-2xl font-bold text-gray-900">衣序</h1>
         </div>
       </div>
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-gray-200 mt-6">
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-gray-200">
         <div>
           <h2 className="text-2xl font-bold text-center text-gray-900">衣序</h2>
           <p className="mt-2 text-center text-sm text-gray-600">创建新账户</p>

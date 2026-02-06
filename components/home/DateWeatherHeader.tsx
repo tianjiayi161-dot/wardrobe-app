@@ -91,7 +91,7 @@ export function DateWeatherHeader() {
       {/* 顶部标题 */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <BrandLogo className="w-12 h-12" />
+          <BrandLogo className="w-8 h-8" />
           <div>
             <h1 className="text-xl font-bold text-black">vibelog</h1>
             <p className="text-sm text-gray-500">衣序</p>
