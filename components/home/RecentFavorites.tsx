@@ -43,6 +43,7 @@ export function RecentFavorites() {
             </div>
           ))}
         </div>
+        <p className="text-xs text-gray-400 mt-2">正在翻找你的心动清单…</p>
       </div>
     )
   }

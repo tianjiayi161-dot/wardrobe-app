@@ -111,7 +111,7 @@ export function DateWeatherHeader() {
         <div className="flex items-center gap-3 text-gray-400">
           <div className="text-2xl">🌤️</div>
           <div>
-            <p className="text-sm">加载天气中...</p>
+            <p className="text-sm">正在和天空对话…</p>
           </div>
         </div>
       ) : weather ? (

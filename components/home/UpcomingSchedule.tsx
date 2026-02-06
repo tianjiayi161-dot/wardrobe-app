@@ -66,7 +66,7 @@ export function UpcomingSchedule() {
 
       {loading ? (
         <div className="p-6 text-center bg-white border border-gray-200 rounded-lg">
-          <p className="text-gray-500">加载中...</p>
+          <p className="text-gray-500">正在梳理你的行程…</p>
         </div>
       ) : upcomingPlans.length === 0 ? (
         <div className="p-6 text-center bg-white border border-gray-200 rounded-lg">

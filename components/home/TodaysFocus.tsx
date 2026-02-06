@@ -59,6 +59,7 @@ export function TodaysFocus() {
             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
           </div>
         </Card>
+        <p className="text-xs text-gray-400 mt-2">正在拼贴灵感…</p>
       </div>
     )
   }
