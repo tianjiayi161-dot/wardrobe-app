@@ -487,7 +487,16 @@ export default function PlannerPage() {
     const base = new Date(plan.instanceDate)
     if (Number.isNaN(base.getTime())) return
     const tomorrow = addDays(base, 1)
-    const payload = {
+    const payload: {
+      title: string
+      date: string
+      type: PlanType
+      outfitId?: string
+      clothingIds?: string[]
+      tips: string[]
+      repeatType: RepeatType
+      repeatDays: number[]
+    } = {
       title: plan.title,
       date: toDateKey(tomorrow),
       type: plan.type,
