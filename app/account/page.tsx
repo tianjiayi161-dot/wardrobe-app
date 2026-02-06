@@ -5,7 +5,6 @@ import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { KeyRound, LogOut, Pencil } from 'lucide-react'
-import { KeyRound, LogOut, Pencil } from 'lucide-react'
 
 export default function AccountPage() {
   const { user, refetch } = useAuth()
