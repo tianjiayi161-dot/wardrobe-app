@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { KeyRound, LogOut, Pencil } from 'lucide-react'
 
 export default function AccountPage() {
   const { user, refetch } = useAuth()
@@ -17,11 +18,14 @@ export default function AccountPage() {
   const [uploading, setUploading] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [savingPwd, setSavingPwd] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const profileRef = useRef<HTMLDivElement | null>(null)
   const securityRef = useRef<HTMLDivElement | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const [stats, setStats] = useState({
     totalItems: 0,
@@ -95,7 +99,7 @@ export default function AccountPage() {
       <div className="px-4 pt-6 pb-4">
         <div className="flex items-center justify-between">
           <div className="text-lg font-semibold text-black">用户资料</div>
-          <div className="relative" ref={menuRef}>
+          <div className="relative z-50" ref={menuRef}>
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
@@ -113,28 +117,31 @@ export default function AccountPage() {
             {menuOpen && (
               <div
                 role="menu"
-                className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50"
+                className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg p-1 z-50"
               >
                 <button
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   onClick={() => {
                     setMenuOpen(false)
                     profileRef.current?.scrollIntoView({ behavior: 'smooth' })
                   }}
                 >
+                  <Pencil size={16} />
                   Edit Profile
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
                   onClick={() => {
                     setMenuOpen(false)
+                    setShowPasswordForm(true)
                     securityRef.current?.scrollIntoView({ behavior: 'smooth' })
                   }}
                 >
-                  Account Security
+                  <KeyRound size={16} />
+                  Change Password
                 </button>
                 <button
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50"
+                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-gray-50 flex items-center gap-2"
                   onClick={async () => {
                     setMenuOpen(false)
                     await fetch('/api/auth/logout', { method: 'POST' })
@@ -142,6 +149,7 @@ export default function AccountPage() {
                     router.push('/login')
                   }}
                 >
+                  <LogOut size={16} />
                   Logout
                 </button>
               </div>
@@ -222,7 +230,7 @@ export default function AccountPage() {
           </Link>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
+        <div ref={profileRef} className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
           <h2 className="text-base font-semibold text-gray-900">Edit Profile</h2>
           <div className="space-y-2">
             <label className="text-sm text-gray-600">昵称</label>
@@ -278,54 +286,55 @@ export default function AccountPage() {
             </div>
           </div>
           <div className="space-y-2">
-            <label className="text-sm text-gray-600">头像 URL</label>
-            <input
-              value={avatar}
-              onChange={(e) => setAvatar(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              placeholder="https://..."
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600">上传头像</label>
-            <input
-              type="file"
-              accept="image/*"
-              className="w-full text-sm"
-              onChange={async (e) => {
-                const file = e.target.files?.[0]
-                if (!file) return
-                setUploading(true)
-                try {
-                  const formData = new FormData()
-                  formData.append('file', file)
-                  const res = await fetch('/api/upload', {
-                    method: 'POST',
-                    body: formData,
-                  })
-                  const data = await res.json()
-                  if (!data.success) {
-                    alert(data.error || '上传失败')
-                    return
-                  }
-                  setAvatar(data.imageUrl)
-                } catch (error) {
-                  console.error('上传失败:', error)
-                  alert('上传失败，请稍后重试')
-                } finally {
-                  setUploading(false)
-                }
-              }}
-            />
+            <label className="text-sm text-gray-600">头像</label>
+            <div className="flex items-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-gray-100 overflow-hidden border border-gray-200">
+                {avatar ? (
+                  <img src={avatar} alt="头像预览" className="w-full h-full object-cover" />
+                ) : null}
+              </div>
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setUploading(true)
+                    try {
+                      const formData = new FormData()
+                      formData.append('file', file)
+                      const res = await fetch('/api/upload', {
+                        method: 'POST',
+                        body: formData,
+                      })
+                      const data = await res.json()
+                      if (!data.success) {
+                        alert(data.error || '上传失败')
+                        return
+                      }
+                      setAvatar(data.imageUrl)
+                    } catch (error) {
+                      console.error('上传失败:', error)
+                      alert('上传失败，请稍后重试')
+                    } finally {
+                      setUploading(false)
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="px-3 py-2 border rounded-md text-sm"
+                >
+                  Upload
+                </button>
+              </div>
+            </div>
             {uploading && (
               <p className="text-xs text-gray-500">头像上传中…</p>
-            )}
-            {avatar && (
-              <img
-                src={avatar}
-                alt="头像预览"
-                className="w-16 h-16 rounded-full object-cover border border-gray-200"
-              />
             )}
           </div>
           <button
@@ -359,57 +368,74 @@ export default function AccountPage() {
           </button>
         </div>
 
-        <div ref={securityRef} className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
-          <h2 className="text-base font-semibold text-gray-900">Account Security</h2>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600">当前密码</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm text-gray-600">新密码</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <button
-            type="button"
-            disabled={savingPwd}
-            onClick={async () => {
-              setSavingPwd(true)
-              try {
-                const res = await fetch('/api/auth/password', {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ currentPassword, newPassword }),
-                })
-                const data = await res.json()
-                if (!data.success) {
-                  alert(data.error || '修改失败')
+        {showPasswordForm && (
+          <div ref={securityRef} className="bg-white border border-gray-200 rounded-2xl p-4 space-y-4">
+            <h2 className="text-base font-semibold text-gray-900">Change Password</h2>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">当前密码</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">新密码</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm text-gray-600">确认新密码</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+            <button
+              type="button"
+              disabled={savingPwd}
+              onClick={async () => {
+                if (!newPassword || newPassword !== confirmPassword) {
+                  alert('新密码与确认密码不一致')
                   return
                 }
-                setCurrentPassword('')
-                setNewPassword('')
-                alert('密码已更新')
-              } catch (error) {
-                console.error('修改失败:', error)
-                alert('修改失败，请稍后重试')
-              } finally {
-                setSavingPwd(false)
-              }
-            }}
-            className="w-full px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400"
-          >
-            {savingPwd ? '保存中...' : '修改密码'}
-          </button>
-        </div>
+                setSavingPwd(true)
+                try {
+                  const res = await fetch('/api/auth/password', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ currentPassword, newPassword }),
+                  })
+                  const data = await res.json()
+                  if (!data.success) {
+                    alert(data.error || '修改失败')
+                    return
+                  }
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmPassword('')
+                  setShowPasswordForm(false)
+                  alert('密码已更新')
+                } catch (error) {
+                  console.error('修改失败:', error)
+                  alert('修改失败，请稍后重试')
+                } finally {
+                  setSavingPwd(false)
+                }
+              }}
+              className="w-full px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 disabled:bg-gray-400"
+            >
+              {savingPwd ? '保存中...' : '修改密码'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

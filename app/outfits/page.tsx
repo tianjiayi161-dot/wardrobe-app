@@ -192,9 +192,9 @@ export default function OutfitsPage() {
             <button
               key={filter.key}
               onClick={() => setActiveFilter(filter.key)}
-              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 min-w-[92px] rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
                 activeFilter === filter.key
-                  ? 'bg-black text-white'
+                  ? 'bg-[color:var(--brand)] text-white border border-[color:var(--brand)]'
                   : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
               }`}
             >
@@ -205,9 +205,9 @@ export default function OutfitsPage() {
             <button
               key={scene}
               onClick={() => setActiveFilter(scene)}
-              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 min-w-[92px] rounded-full text-sm font-medium whitespace-nowrap transition-colors flex items-center justify-center gap-1 ${
                 activeFilter === scene
-                  ? 'bg-black text-white'
+                  ? 'bg-[color:var(--brand)] text-white border border-[color:var(--brand)]'
                   : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
               }`}
             >
