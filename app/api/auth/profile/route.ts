@@ -9,7 +9,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { name, avatar } = await request.json()
+    const { name, avatar, bio, vibeTags } = await request.json()
     const users = await getCollection('users')
 
     const result = await users.findOneAndUpdate(
@@ -18,6 +18,8 @@ export async function PUT(request: NextRequest) {
         $set: {
           name: name?.trim() || '',
           avatar: avatar?.trim() || '',
+          bio: bio?.trim() || '',
+          vibeTags: Array.isArray(vibeTags) ? vibeTags : [],
           updatedAt: new Date(),
         },
       },
@@ -35,6 +37,8 @@ export async function PUT(request: NextRequest) {
         email: result.email,
         name: result.name,
         avatar: result.avatar,
+        bio: result.bio,
+        vibeTags: result.vibeTags,
         updatedAt: result.updatedAt,
       },
     })

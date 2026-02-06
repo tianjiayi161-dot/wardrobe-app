@@ -60,6 +60,8 @@ export async function getUserFromToken(token: string) {
     email: user.email,
     name: user.name,
     avatar: user.avatar,
+    bio: user.bio,
+    vibeTags: user.vibeTags,
     emailVerified: user.emailVerified,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,

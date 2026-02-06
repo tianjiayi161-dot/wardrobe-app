@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import type { Outfit, Clothing } from '@/types'
-import { AIGenerateCard } from '@/components/outfits/AIGenerateCard'
 import { OutfitsGrid } from '@/components/outfits/OutfitsGrid'
 import { getWeatherEmoji } from '@/lib/weather'
 import { PageHeader } from '@/components/PageHeader'
@@ -157,30 +156,35 @@ export default function OutfitsPage() {
         }
       />
 
-      {/* 选择创建方式 */}
-      <div className="px-4 pt-4 pb-2">
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            href="/outfits/create?mode=manual"
-            className="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md transition-shadow"
-          >
+      {/* 入口板块：自己搭配 & AI搭配 */}
+      <div className="px-4 pt-4 pb-2 space-y-3">
+        <div className="bg-white border border-gray-200 rounded-2xl p-4 flex items-center justify-between">
+          <div>
             <div className="text-sm text-gray-500 mb-1">自己搭配</div>
             <div className="text-base font-semibold text-black">手动选择衣服</div>
-            <div className="mt-3 text-xs text-gray-500">给搭配命名 · 可自定义</div>
+            <div className="mt-2 text-xs text-gray-500">给搭配命名 · 可自定义</div>
+          </div>
+          <Link
+            href="/outfits/create?mode=manual"
+            className="px-4 py-2 rounded-lg border border-gray-300 text-sm"
+          >
+            开始
           </Link>
+        </div>
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 flex items-center justify-between">
+          <div>
+            <div className="text-sm text-gray-500 mb-1">AI搭配</div>
+            <div className="text-base font-semibold text-black">穿搭实验室</div>
+            <div className="mt-2 text-xs text-gray-500">一键生成 · 基于衣橱与天气</div>
+          </div>
           <Link
             href="/outfits/create?mode=ai"
-            className="bg-gray-50 border border-gray-200 rounded-2xl p-4 hover:shadow-md transition-shadow"
+            className="px-4 py-2 rounded-lg text-white bg-[color:var(--brand)] text-sm"
           >
-            <div className="text-sm text-gray-500 mb-1">AI 搭配</div>
-            <div className="text-base font-semibold text-black">一键生成</div>
-            <div className="mt-3 text-xs text-gray-500">基于衣橱与天气</div>
+            进入
           </Link>
         </div>
       </div>
-
-      {/* AI生成卡片 */}
-      <AIGenerateCard />
 
       <div className="px-4 pb-3">
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -188,7 +192,7 @@ export default function OutfitsPage() {
             <button
               key={filter.key}
               onClick={() => setActiveFilter(filter.key)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                 activeFilter === filter.key
                   ? 'bg-black text-white'
                   : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -201,7 +205,7 @@ export default function OutfitsPage() {
             <button
               key={scene}
               onClick={() => setActiveFilter(scene)}
-              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                 activeFilter === scene
                   ? 'bg-black text-white'
                   : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'

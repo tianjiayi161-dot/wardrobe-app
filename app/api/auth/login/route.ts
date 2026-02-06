@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
         email: user.email,
         name: user.name,
         avatar: user.avatar,
+        bio: user.bio,
+        vibeTags: user.vibeTags,
         emailVerified: user.emailVerified,
       },
     })

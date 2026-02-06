@@ -3,6 +3,8 @@ export interface User {
   email: string
   name: string
   avatar?: string
+  bio?: string
+  vibeTags?: string[]
   createdAt: Date
   updatedAt: Date
   emailVerified: boolean
