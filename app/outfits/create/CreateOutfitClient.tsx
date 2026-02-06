@@ -48,6 +48,7 @@ export default function CreateOutfitClient() {
     description: '',
     occasion: '',
     season: '',
+    tags: '',
   })
 
   useEffect(() => {
@@ -137,6 +138,10 @@ export default function CreateOutfitClient() {
     setLoading(true)
 
     try {
+      const tags = formData.tags
+        ? formData.tags.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+        : []
+
       const payload =
         mode === 'ai'
           ? {
@@ -147,11 +152,13 @@ export default function CreateOutfitClient() {
               season: formData.season || selectedRecommendation?.season || '',
               clothingIds: selectedRecommendation?.clothingIds || [],
               isAIGenerated: true,
+              tags,
             }
           : {
               ...formData,
               clothingIds: selectedClothingIds,
               isAIGenerated: false,
+              tags,
             }
 
       const response = await fetch('/api/outfits', {
@@ -375,6 +382,19 @@ export default function CreateOutfitClient() {
                 <option value="winter">冬季</option>
               </select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-900">
+              标签（用逗号分隔）
+            </label>
+            <input
+              type="text"
+              value={formData.tags}
+              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+              placeholder="如：通勤, 约会, 简约"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+            />
           </div>
         </div>
 

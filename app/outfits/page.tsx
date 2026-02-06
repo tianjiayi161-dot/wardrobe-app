@@ -14,10 +14,30 @@ export default function OutfitsPage() {
   const [loading, setLoading] = useState(true)
   const [weatherText, setWeatherText] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState('all')
+  const [customScenes, setCustomScenes] = useState<string[]>([])
+  const [showSceneModal, setShowSceneModal] = useState(false)
+  const [newSceneName, setNewSceneName] = useState('')
+  const [scheduleCounts, setScheduleCounts] = useState<Record<string, number>>({})
+  const [recentSchedules, setRecentSchedules] = useState<Record<string, number>>({})
 
   useEffect(() => {
     fetchData()
   }, [])
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('outfit-scenes')
+    if (saved) {
+      try {
+        setCustomScenes(JSON.parse(saved))
+      } catch (error) {
+        console.error('解析场景失败:', error)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    window.localStorage.setItem('outfit-scenes', JSON.stringify(customScenes))
+  }, [customScenes])
 
   useEffect(() => {
     if (!('geolocation' in navigator)) return
@@ -42,9 +62,10 @@ export default function OutfitsPage() {
 
   const fetchData = async () => {
     try {
-      const [outfitsRes, clothesRes] = await Promise.all([
+      const [outfitsRes, clothesRes, schedulesRes] = await Promise.all([
         fetch('/api/outfits'),
-        fetch('/api/clothes')
+        fetch('/api/clothes'),
+        fetch('/api/schedules'),
       ])
 
       if (outfitsRes.ok && clothesRes.ok) {
@@ -52,6 +73,23 @@ export default function OutfitsPage() {
         const clothesData = await clothesRes.json()
         setOutfits(outfitsData.outfits ?? [])
         setClothes(clothesData.clothes ?? [])
+      }
+      if (schedulesRes.ok) {
+        const schedulesData = await schedulesRes.json()
+        const counts: Record<string, number> = {}
+        const recent: Record<string, number> = {}
+        const now = Date.now()
+        const recentWindow = 1000 * 60 * 60 * 24 * 30
+        for (const item of schedulesData.schedules || []) {
+          if (!item.outfitId) continue
+          counts[item.outfitId] = (counts[item.outfitId] || 0) + 1
+          const date = new Date(item.date).getTime()
+          if (now - date <= recentWindow) {
+            recent[item.outfitId] = (recent[item.outfitId] || 0) + 1
+          }
+        }
+        setScheduleCounts(counts)
+        setRecentSchedules(recent)
       }
     } catch (error) {
       console.error('Failed to fetch data:', error)
@@ -62,9 +100,13 @@ export default function OutfitsPage() {
 
   const filters = [
     { key: 'all', label: 'All ✨' },
-    { key: 'summer', label: 'Summer ☀️' },
-    { key: 'work', label: 'Work 💼' },
-    { key: 'casual', label: 'Casual 🧢' },
+    { key: 'daily', label: '日常 🌿' },
+    { key: 'commute', label: '通勤 💼' },
+    { key: 'sport', label: '运动 🏃' },
+    { key: 'date', label: '约会 💗' },
+    { key: 'formal', label: '正式 🎩' },
+    { key: 'recent', label: '最近常穿 🔥' },
+    { key: 'unused', label: '压箱底 🧊' },
   ]
 
   const filteredOutfits = useMemo(() => {
@@ -73,31 +115,33 @@ export default function OutfitsPage() {
       const tagsText = (outfit.tags || []).join(' ').toLowerCase()
       const occasionText = (outfit.occasion || '').toLowerCase()
       const seasonText = (outfit.season || '').toLowerCase()
-      if (activeFilter === 'summer') {
-        return seasonText.includes('summer') || tagsText.includes('summer') || tagsText.includes('夏')
+      if (activeFilter === 'daily') {
+        return tagsText.includes('日常') || tagsText.includes('casual') || occasionText.includes('日常')
       }
-      if (activeFilter === 'work') {
-        return (
-          occasionText.includes('work') ||
-          occasionText.includes('office') ||
-          occasionText.includes('商务') ||
-          occasionText.includes('通勤') ||
-          tagsText.includes('work') ||
-          tagsText.includes('office') ||
-          tagsText.includes('正式')
-        )
+      if (activeFilter === 'commute') {
+        return tagsText.includes('通勤') || occasionText.includes('通勤') || occasionText.includes('work')
       }
-      if (activeFilter === 'casual') {
-        return (
-          occasionText.includes('casual') ||
-          occasionText.includes('休闲') ||
-          tagsText.includes('casual') ||
-          tagsText.includes('休闲')
-        )
+      if (activeFilter === 'sport') {
+        return tagsText.includes('运动') || tagsText.includes('sport') || occasionText.includes('运动')
       }
-      return true
+      if (activeFilter === 'date') {
+        return tagsText.includes('约会') || tagsText.includes('date') || occasionText.includes('约会')
+      }
+      if (activeFilter === 'formal') {
+        return tagsText.includes('正式') || occasionText.includes('正式') || occasionText.includes('office')
+      }
+      if (activeFilter === 'recent') {
+        return (recentSchedules[outfit._id] || 0) > 0
+      }
+      if (activeFilter === 'unused') {
+        return (recentSchedules[outfit._id] || 0) === 0
+      }
+      if (customScenes.includes(activeFilter)) {
+        return tagsText.includes(activeFilter.toLowerCase())
+      }
+      return false
     })
-  }, [activeFilter, outfits])
+  }, [activeFilter, outfits, customScenes, recentSchedules])
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -152,6 +196,26 @@ export default function OutfitsPage() {
               {filter.label}
             </button>
           ))}
+          {customScenes.map((scene) => (
+            <button
+              key={scene}
+              onClick={() => setActiveFilter(scene)}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                activeFilter === scene
+                  ? 'bg-black text-white'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              {scene}
+            </button>
+          ))}
+          <button
+            onClick={() => setShowSceneModal(true)}
+            className="w-10 h-10 rounded-full flex items-center justify-center bg-[color:var(--brand)] text-white flex-shrink-0"
+            aria-label="新建场合"
+          >
+            +
+          </button>
         </div>
       </div>
 
@@ -164,6 +228,47 @@ export default function OutfitsPage() {
 
       {/* 搭配网格 */}
       <OutfitsGrid outfits={filteredOutfits} clothes={clothes} loading={loading} />
+
+      {showSceneModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-4 w-[90%] max-w-sm">
+            <h3 className="text-lg font-semibold text-black mb-2">新建场合</h3>
+            <input
+              type="text"
+              value={newSceneName}
+              onChange={(e) => setNewSceneName(e.target.value)}
+              placeholder="例如：旅行 / 见家长"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md mb-3"
+            />
+            <div className="flex gap-2">
+              <button
+                className="flex-1 px-3 py-2 border rounded-md"
+                onClick={() => {
+                  setShowSceneModal(false)
+                  setNewSceneName('')
+                }}
+              >
+                取消
+              </button>
+              <button
+                className="flex-1 px-3 py-2 bg-black text-white rounded-md"
+                onClick={() => {
+                  const name = newSceneName.trim()
+                  if (!name) return
+                  if (!customScenes.includes(name)) {
+                    setCustomScenes((prev) => [...prev, name])
+                  }
+                  setActiveFilter(name)
+                  setShowSceneModal(false)
+                  setNewSceneName('')
+                }}
+              >
+                添加
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 创建搭配按钮 */}
       <Link

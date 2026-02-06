@@ -1,4 +1,5 @@
 import { DateWeatherHeader } from '@/components/home/DateWeatherHeader'
+import { TomorrowPreview } from '@/components/home/TomorrowPreview'
 import { TodaysFocus } from '@/components/home/TodaysFocus'
 import { RecentFavorites } from '@/components/home/RecentFavorites'
 import { UpcomingSchedule } from '@/components/home/UpcomingSchedule'
@@ -8,6 +9,9 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-50">
       {/* 日期和天气 */}
       <DateWeatherHeader />
+
+      {/* 明日预告 */}
+      <TomorrowPreview />
 
       {/* 最近收藏的衣服 */}
       <RecentFavorites />

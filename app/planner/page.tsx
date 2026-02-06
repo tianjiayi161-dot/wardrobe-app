@@ -198,7 +198,7 @@ export default function PlannerPage() {
   const [selectedOutfit, setSelectedOutfit] = useState('')
   const [selectedClothes, setSelectedClothes] = useState<string[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [viewMode, setViewMode] = useState<'week' | 'month'>('week')
+  const viewMode: 'month' = 'month'
   const [repeatType, setRepeatType] = useState<RepeatType>('none')
   const [repeatDays, setRepeatDays] = useState<number[]>([])
 
@@ -245,8 +245,8 @@ export default function PlannerPage() {
 
   const plannedByDate = useMemo(() => {
     const today = new Date()
-    const rangeStart = viewMode === 'week' ? startOfWeek(today) : startOfMonth(today)
-    const rangeEnd = viewMode === 'week' ? endOfWeek(today) : endOfMonth(today)
+    const rangeStart = startOfMonth(today)
+    const rangeEnd = endOfMonth(today)
 
     const instances: WearPlanInstance[] = []
 
@@ -308,7 +308,7 @@ export default function PlannerPage() {
         grouped[plan.instanceDate].push(plan)
       })
     return grouped
-  }, [plans, viewMode])
+  }, [plans])
 
   const clothesById = useMemo(
     () => new Map(clothes.map((item) => [item._id, item])),
@@ -546,30 +546,7 @@ export default function PlannerPage() {
         </Link>
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={() => setViewMode('week')}
-          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-            viewMode === 'week'
-              ? 'bg-black text-white border-black'
-              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          周视图
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewMode('month')}
-          className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-            viewMode === 'month'
-              ? 'bg-black text-white border-black'
-              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-          }`}
-        >
-          月视图
-        </button>
-      </div>
+
 
       <section className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -713,18 +690,41 @@ export default function PlannerPage() {
         {planType === 'outfit' ? (
           <div className="space-y-2">
             <label className="text-sm font-medium text-gray-900">选择搭配</label>
-            <select
-              value={selectedOutfit}
-              onChange={(e) => setSelectedOutfit(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
-            >
-              <option value="">请选择</option>
-              {outfits.map((outfit) => (
-                <option key={outfit._id} value={outfit._id}>
-                  {outfit.name}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {outfits.map((outfit) => {
+                const previewId = outfit.clothingIds?.[0]
+                const preview = previewId ? clothesById.get(previewId) : undefined
+                const isSelected = selectedOutfit === outfit._id
+                return (
+                  <button
+                    type="button"
+                    key={outfit._id}
+                    onClick={() => setSelectedOutfit(outfit._id)}
+                    className={`flex items-center gap-3 p-2 border rounded-lg text-left transition-colors ${
+                      isSelected ? 'border-black bg-gray-50' : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
+                      {preview ? (
+                        <img
+                          src={getThumbnailUrl(preview.imageUrl, 160)}
+                          alt={preview.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : null}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {outfit.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {outfit.clothingIds.length} 件
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         ) : (
           <div className="space-y-2">
@@ -733,7 +733,7 @@ export default function PlannerPage() {
               {clothes.map((item) => (
                 <label
                   key={item._id}
-                  className={`flex items-center gap-2 px-3 py-2 border rounded-md text-sm cursor-pointer ${
+                  className={`flex items-center gap-2 p-2 border rounded-lg text-sm cursor-pointer ${
                     selectedClothes.includes(item._id)
                       ? 'border-black bg-gray-50'
                       : 'border-gray-200'
@@ -744,6 +744,13 @@ export default function PlannerPage() {
                     checked={selectedClothes.includes(item._id)}
                     onChange={() => handleToggleClothing(item._id)}
                   />
+                  <div className="w-10 h-10 rounded-md bg-gray-100 overflow-hidden flex-shrink-0">
+                    <img
+                      src={getThumbnailUrl(item.imageUrl, 160)}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <span className="truncate">{item.name}</span>
                 </label>
               ))}
