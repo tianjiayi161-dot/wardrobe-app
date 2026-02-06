@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { getWeatherEmoji, getClothingAdvice } from '@/lib/weather'
 import { User } from 'lucide-react'
+import { BrandLogo } from '@/components/BrandLogo'
 
 interface WeatherData {
   temperature: number
@@ -88,9 +89,12 @@ export function DateWeatherHeader() {
     <div className="px-4 pt-6 pb-4">
       {/* 顶部标题 */}
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-xl font-bold text-black">vibelog</h1>
-          <p className="text-sm text-gray-500">衣序</p>
+        <div className="flex items-center gap-3">
+          <BrandLogo className="w-10 h-10" />
+          <div>
+            <h1 className="text-xl font-bold text-black">vibelog</h1>
+            <p className="text-sm text-gray-500">衣序</p>
+          </div>
         </div>
         <button
           type="button"
