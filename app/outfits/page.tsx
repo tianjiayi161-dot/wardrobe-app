@@ -7,6 +7,7 @@ import type { Outfit, Clothing } from '@/types'
 import { AIGenerateCard } from '@/components/outfits/AIGenerateCard'
 import { OutfitsGrid } from '@/components/outfits/OutfitsGrid'
 import { getWeatherEmoji } from '@/lib/weather'
+import { PageHeader } from '@/components/PageHeader'
 
 export default function OutfitsPage() {
   const [outfits, setOutfits] = useState<Outfit[]>([])
@@ -145,16 +146,16 @@ export default function OutfitsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="px-4 pt-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-black">搭配</h1>
-          {weatherText && (
+      <PageHeader
+        title="搭配"
+        right={
+          weatherText ? (
             <span className="text-xs px-3 py-1 rounded-full bg-white border border-gray-200 text-gray-700">
               {weatherText}
             </span>
-          )}
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {/* 选择创建方式 */}
       <div className="px-4 pt-4 pb-2">

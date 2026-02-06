@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useAuth } from '@/lib/auth-context'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { BrandLogo } from '@/components/BrandLogo'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,10 +30,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-gray-200">
+    <div className="min-h-screen flex flex-col items-center bg-gray-50 px-4">
+      <div className="w-full max-w-md pt-6">
+        <div className="flex items-center gap-3">
+          <BrandLogo className="w-12 h-12" />
+          <div>
+            <div className="text-xs text-gray-500">vibelog</div>
+            <h1 className="text-2xl font-bold text-gray-900">衣序</h1>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-lg border border-gray-200 mt-6">
         <div>
-          <h2 className="text-3xl font-bold text-center text-gray-900">衣历</h2>
+          <h2 className="text-2xl font-bold text-center text-gray-900">衣序</h2>
           <p className="mt-2 text-center text-sm text-gray-600">登录您的账户</p>
         </div>
 

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { Clothing, Outfit } from '@/types'
 import { categoryMap, formatDate, getThumbnailUrl } from '@/lib/utils'
+import { PageHeader } from '@/components/PageHeader'
 
 type PlanType = 'outfit' | 'clothes'
 type RepeatType = 'none' | 'daily' | 'workdays' | 'custom'
@@ -531,20 +532,21 @@ export default function PlannerPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">穿行计划</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            规划每天穿什么，保持节奏。
-          </p>
-        </div>
-        <Link
-          href="/"
-          className="text-sm text-gray-600 hover:text-gray-900"
-        >
-          返回首页
-        </Link>
-      </div>
+      <PageHeader
+        title="穿行计划"
+        right={
+          <Link
+            href="/"
+            className="text-sm text-gray-600 hover:text-gray-900"
+          >
+            返回首页
+          </Link>
+        }
+      />
+
+      <p className="px-4 text-sm text-gray-600 -mt-2">
+        规划每天穿什么，保持节奏。
+      </p>
 
 
 

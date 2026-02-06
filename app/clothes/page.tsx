@@ -7,6 +7,7 @@ import { FilterTabs, FilterType } from '@/components/clothes/FilterTabs'
 import { ClothesGrid } from '@/components/clothes/ClothesGrid'
 import { AddButton } from '@/components/clothes/AddButton'
 import { CategoryStackGrid } from '@/components/clothes/CategoryStackGrid'
+import { PageHeader } from '@/components/PageHeader'
 
 export default function ClothesPage() {
   const [allClothes, setAllClothes] = useState<Clothing[]>([])
@@ -90,6 +91,7 @@ export default function ClothesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <PageHeader title="衣橱" />
       {/* 搜索栏 */}
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
