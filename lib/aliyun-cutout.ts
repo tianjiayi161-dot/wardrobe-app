@@ -1,4 +1,5 @@
 import { applyWhiteBackground } from '@/lib/image-pipeline'
+import { uploadToOSS } from '@/lib/oss'
 
 export async function removeBackgroundWithAliyun(
   imageBuffer: Buffer,
@@ -11,17 +12,29 @@ export async function removeBackgroundWithAliyun(
     throw new Error('ALIYUN_CUTOUT_ENDPOINT 或 ALIYUN_CUTOUT_APPCODE 未配置')
   }
 
-  const base64 = imageBuffer.toString('base64')
-  const res = await fetch(endpoint, {
-    method: 'POST',
+  const originUrl = await uploadToOSS(
+    imageBuffer,
+    `cutout-origin-${Date.now()}.jpg`,
+    mimeType || 'image/jpeg'
+  )
+
+  const baseUrl = endpoint.startsWith('http')
+    ? endpoint
+    : `https://${endpoint}`
+
+  const params = new URLSearchParams({
+    Action: 'SegmentCommodity',
+    Version: '2019-12-30',
+    ImageURL: originUrl,
+    ReturnForm: 'whiteBK',
+    Format: 'JSON',
+  })
+
+  const res = await fetch(`${baseUrl}/?${params.toString()}`, {
+    method: 'GET',
     headers: {
       Authorization: `APPCODE ${appCode}`,
-      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      image: base64,
-      image_type: 'BASE64',
-    }),
   })
 
   if (!res.ok) {
@@ -29,22 +42,28 @@ export async function removeBackgroundWithAliyun(
     throw new Error(`阿里云抠图失败: ${res.status} ${text}`)
   }
 
-  const data = await res.json()
-  const base64Result =
-    data?.data?.image ||
-    data?.data?.result ||
-    data?.result ||
-    data?.image ||
-    ''
+  const contentType = res.headers.get('content-type') || ''
+  let resultUrl = ''
+  if (contentType.includes('application/json')) {
+    const data = await res.json()
+    resultUrl = data?.Data?.ImageURL || data?.data?.imageUrl || ''
+  } else {
+    const text = await res.text()
+    const match = text.match(/<ImageURL>(.*?)<\/ImageURL>/)
+    resultUrl = match?.[1] || ''
+  }
 
-  if (!base64Result) {
+  if (!resultUrl) {
     throw new Error('阿里云抠图返回为空')
   }
 
-  const cutoutBuffer = Buffer.from(
-    base64Result.replace(/^data:image\/\w+;base64,/, ''),
-    'base64'
-  )
+  const imageRes = await fetch(resultUrl)
+  if (!imageRes.ok) {
+    const text = await imageRes.text()
+    throw new Error(`阿里云抠图结果下载失败: ${imageRes.status} ${text}`)
+  }
+  const arrayBuffer = await imageRes.arrayBuffer()
+  const cutoutBuffer = Buffer.from(arrayBuffer)
 
   return applyWhiteBackground(cutoutBuffer)
 }
