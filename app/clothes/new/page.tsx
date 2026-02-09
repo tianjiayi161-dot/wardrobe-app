@@ -132,6 +132,7 @@ function NewClothingForm() {
   const [aiDescription, setAiDescription] = useState('')
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
+  const [sourceMode, setSourceMode] = useState<'upload' | 'ai'>('upload')
 
   const analysisSteps = useMemo(
     () => ['读取图片', '提取轮廓', '识别颜色', '判断类别', '生成标签'],
@@ -466,8 +467,63 @@ function NewClothingForm() {
       <h1 className="text-3xl font-bold text-gray-900">添加衣服</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* 文本生成 */}
+        {/* 图片来源选择 */}
         <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-900">
+            图片来源
+          </label>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setSourceMode('upload')}
+              className={`px-4 py-2 text-sm rounded-full border transition-colors ${
+                sourceMode === 'upload'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              上传抠图
+            </button>
+            <button
+              type="button"
+              onClick={() => setSourceMode('ai')}
+              className={`px-4 py-2 text-sm rounded-full border transition-colors ${
+                sourceMode === 'ai'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              AI 生图
+            </button>
+          </div>
+          <p className="text-xs text-gray-500">
+            你可以在上传抠图与 AI 生图之间切换。
+          </p>
+        </div>
+
+        {imagePreview && (
+          <div className="relative w-full aspect-square max-w-sm mx-auto border rounded-lg overflow-hidden">
+            <Image
+              src={imagePreview}
+              alt="预览"
+              fill
+              className="object-cover"
+            />
+            {analyzing && (
+              <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3">
+                <div className="h-10 w-10 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
+                <p className="text-white font-medium text-lg">AI 识别中...</p>
+                <p className="text-white text-sm">
+                  {analysisSteps[analysisStep]}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 文本生成 */}
+        {sourceMode === 'ai' && (
+          <div className="space-y-3">
           <label className="block text-sm font-medium text-gray-900">
             描述生衣
           </label>
@@ -497,9 +553,11 @@ function NewClothingForm() {
             </div>
           )}
         </div>
+        )}
 
         {/* 图片上传 */}
-        <div className="space-y-3">
+        {sourceMode === 'upload' && (
+          <div className="space-y-3">
           <div className="flex items-center justify-between gap-4">
             <label className="block text-sm font-medium text-gray-900">
               上传照片
@@ -554,25 +612,6 @@ function NewClothingForm() {
             required
             disabled={analyzing}
           />
-          {imagePreview && (
-            <div className="relative w-full aspect-square max-w-sm mx-auto border rounded-lg overflow-hidden">
-              <Image
-                src={imagePreview}
-                alt="预览"
-                fill
-                className="object-cover"
-              />
-              {analyzing && (
-                <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3">
-                  <div className="h-10 w-10 rounded-full border-2 border-white border-t-transparent animate-spin"></div>
-                  <p className="text-white font-medium text-lg">AI 识别中...</p>
-                  <p className="text-white text-sm">
-                    {analysisSteps[analysisStep]}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
           {analysisMode === 'assist' && pendingAnalysis && (
             <div className="border border-gray-200 rounded-lg p-4 bg-white space-y-2">
               <div className="text-sm font-medium text-gray-900">
@@ -616,6 +655,7 @@ function NewClothingForm() {
             </div>
           )}
         </div>
+        )}
 
         {/* 名称 */}
         <div className="space-y-2">
