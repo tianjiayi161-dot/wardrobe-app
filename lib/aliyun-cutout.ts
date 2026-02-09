@@ -20,8 +20,8 @@ export async function removeBackgroundWithAliyun(
     mimeType || 'image/jpeg'
   )
 
-  const callApi = async (payload: Record<string, string>) => {
-    return fetch(url, {
+  const callJson = async (payload: Record<string, string>) =>
+    fetch(url, {
       method: 'POST',
       headers: {
         Authorization: `APPCODE ${appCode}`,
@@ -29,32 +29,49 @@ export async function removeBackgroundWithAliyun(
       },
       body: JSON.stringify(payload),
     })
+
+  const callForm = async (payload: Record<string, string>) => {
+    const form = new URLSearchParams(payload)
+    return fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `APPCODE ${appCode}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: form.toString(),
+    })
   }
 
-  let res = await callApi({
-    image: base64,
-    image_type: 'BASE64',
-    image_url: originUrl,
-  })
+  const candidates: Array<() => Promise<Response>> = [
+    () => callJson({ image: base64, image_type: 'BASE64' }),
+    () => callJson({ img: base64 }),
+    () => callForm({ image: base64 }),
+    () => callJson({ image_url: originUrl }),
+    () => callForm({ image_url: originUrl }),
+  ]
 
-  const contentType = res.headers.get('content-type') || ''
+  let res: Response | null = null
   let data: any = null
-  if (contentType.includes('application/json')) {
+  for (const request of candidates) {
+    res = await request()
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      const text = await res.text()
+      throw new Error(`阿里云抠图失败: ${res.status} ${text}`)
+    }
     data = await res.json()
-  } else {
-    const text = await res.text()
-    throw new Error(`阿里云抠图失败: ${res.status} ${text}`)
-  }
-
-  if (!res.ok || data?.success === false) {
-    const msg = data?.msg || data?.message || '阿里云抠图失败'
-    if (String(msg).includes('图片不能为空')) {
-      res = await callApi({ image_url: originUrl })
-      const retryData = await res.json()
-      data = retryData
-    } else {
+    const msg = data?.msg || data?.message || ''
+    if (!res.ok || data?.success === false) {
+      if (String(msg).includes('图片不能为空')) {
+        continue
+      }
       throw new Error(`阿里云抠图失败: ${res.status} ${JSON.stringify(data)}`)
     }
+    break
+  }
+
+  if (!data) {
+    throw new Error('阿里云抠图失败: 未获得有效响应')
   }
 
   const base64Result =
