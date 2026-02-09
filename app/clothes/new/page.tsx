@@ -1,9 +1,10 @@
 'use client'
 
-import { Suspense, useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { GeminiAnalysisResult } from '@/types'
+import { BrowserMultiFormatReader, BarcodeFormat, DecodeHintType } from '@zxing/browser'
 
 const CATEGORY_OPTIONS = [
   'tshirt',
@@ -40,6 +41,15 @@ type AttributeLabels = {
   style: string[]
   season: string[]
   description: string
+}
+
+type BarcodeLookupResult = {
+  code: string
+  name: string
+  brand?: string
+  imageUrl?: string
+  material?: string
+  season?: string[]
 }
 
 const COLOR_MAP: Record<string, string> = {
@@ -132,7 +142,13 @@ function NewClothingForm() {
   const [aiDescription, setAiDescription] = useState('')
   const [aiGenerating, setAiGenerating] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
-  const [sourceMode, setSourceMode] = useState<'upload' | 'ai'>('upload')
+  const [sourceMode, setSourceMode] = useState<'upload' | 'ai' | 'barcode'>('upload')
+  const [barcodeLoading, setBarcodeLoading] = useState(false)
+  const [barcodeResult, setBarcodeResult] = useState<BarcodeLookupResult | null>(null)
+  const [barcodeSheetOpen, setBarcodeSheetOpen] = useState(false)
+  const [barcodeError, setBarcodeError] = useState('')
+  const scannerControls = useRef<{ stop: () => void } | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   const analysisSteps = useMemo(
     () => ['读取图片', '提取轮廓', '识别颜色', '判断类别', '生成标签'],
@@ -168,6 +184,106 @@ function NewClothingForm() {
 
     return () => clearInterval(timer)
   }, [analyzing, analysisSteps])
+
+  useEffect(() => {
+    const stopScanner = () => {
+      if (scannerControls.current) {
+        scannerControls.current.stop()
+        scannerControls.current = null
+      }
+    }
+
+    if (sourceMode !== 'barcode') {
+      stopScanner()
+      return
+    }
+
+    let cancelled = false
+    const initScanner = async () => {
+      try {
+        setBarcodeError('')
+        const hints = new Map()
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+        ])
+
+        const reader = new BrowserMultiFormatReader(hints, 300)
+        const controls = await reader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current,
+          (result) => {
+            if (!result || cancelled) return
+            const code = result.getText()
+            if (!code) return
+            stopScanner()
+            handleBarcodeDetected(code)
+          }
+        )
+        scannerControls.current = controls
+      } catch (error) {
+        console.error('启动扫码失败:', error)
+        setBarcodeError('无法启动摄像头，请检查权限')
+      }
+    }
+
+    initScanner()
+
+    return () => {
+      cancelled = true
+      stopScanner()
+    }
+  }, [sourceMode])
+
+  const handleBarcodeDetected = async (code: string) => {
+    setBarcodeLoading(true)
+    setBarcodeError('')
+    setBarcodeResult(null)
+    try {
+      const response = await fetch('/api/barcode-lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        setBarcodeError(data.error || '未找到条码信息')
+        setBarcodeSheetOpen(true)
+        return
+      }
+      setBarcodeResult(data.result as BarcodeLookupResult)
+      setBarcodeSheetOpen(true)
+    } catch (error) {
+      console.error('条码查询失败:', error)
+      setBarcodeError('条码查询失败，请稍后重试')
+      setBarcodeSheetOpen(true)
+    } finally {
+      setBarcodeLoading(false)
+    }
+  }
+
+  const applyBarcodeResult = () => {
+    if (!barcodeResult) return
+    if (!barcodeResult.imageUrl) {
+      alert('官方图像缺失，请改用上传抠图')
+      setSourceMode('upload')
+      setBarcodeSheetOpen(false)
+      return
+    }
+    setProcessedImageUrl(barcodeResult.imageUrl)
+    setProcessedThumbnail(barcodeResult.imageUrl)
+    setImagePreview(barcodeResult.imageUrl)
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name || barcodeResult.name,
+      brand: prev.brand || barcodeResult.brand || '',
+      material: prev.material || barcodeResult.material || '',
+      season: prev.season.length ? prev.season : barcodeResult.season || [],
+    }))
+    setBarcodeSheetOpen(false)
+  }
 
   const readFileAsDataURL = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -372,7 +488,7 @@ function NewClothingForm() {
     e.preventDefault()
 
     if (!imageFile && !processedImageUrl) {
-      alert('请选择图片或先生成图片')
+      alert('请选择图片或先生成/识别图片')
       return
     }
 
@@ -495,6 +611,17 @@ function NewClothingForm() {
             >
               AI 生图
             </button>
+            <button
+              type="button"
+              onClick={() => setSourceMode('barcode')}
+              className={`px-4 py-2 text-sm rounded-full border transition-colors ${
+                sourceMode === 'barcode'
+                  ? 'bg-black text-white border-black'
+                  : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              条码识别
+            </button>
           </div>
           <p className="text-xs text-gray-500">
             你可以在上传抠图与 AI 生图之间切换。
@@ -553,6 +680,26 @@ function NewClothingForm() {
             </div>
           )}
         </div>
+        )}
+
+        {sourceMode === 'barcode' && (
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-gray-900">
+              扫描条码
+            </label>
+            <div className="rounded-lg border border-gray-200 bg-black overflow-hidden">
+              <video ref={videoRef} className="w-full h-72 object-cover" />
+            </div>
+            <div className="text-xs text-gray-500">
+              请将条形码置于取景框中央，识别后会自动查询商品信息。
+            </div>
+            {barcodeLoading && (
+              <div className="text-xs text-gray-500">正在查询条码信息...</div>
+            )}
+            {barcodeError && (
+              <div className="text-xs text-red-500">{barcodeError}</div>
+            )}
+          </div>
         )}
 
         {/* 图片上传 */}
@@ -904,6 +1051,89 @@ function NewClothingForm() {
           </button>
         </div>
       </form>
+
+      {barcodeSheetOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40">
+          <div className="w-full max-w-2xl bg-white rounded-t-3xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="text-base font-semibold text-gray-900">条码识别结果</div>
+              <button
+                type="button"
+                onClick={() => setBarcodeSheetOpen(false)}
+                className="text-sm text-gray-500"
+              >
+                关闭
+              </button>
+            </div>
+            {barcodeError && (
+              <div className="text-sm text-red-500">
+                {barcodeError}，已为你准备上传抠图入口
+              </div>
+            )}
+            {barcodeResult ? (
+              <div className="flex gap-4">
+                <div className="w-28 h-28 rounded-lg border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center">
+                  {barcodeResult.imageUrl ? (
+                    <Image
+                      src={barcodeResult.imageUrl}
+                      alt={barcodeResult.name}
+                      width={112}
+                      height={112}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <span className="text-xs text-gray-400">暂无图片</span>
+                  )}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="text-sm font-medium text-gray-900">
+                    {barcodeResult.name || '未命名商品'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    条码：{barcodeResult.code}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    品牌：{barcodeResult.brand || '未提供'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    材质：{barcodeResult.material || '未提供'}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    建议季节：
+                    {barcodeResult.season?.length
+                      ? barcodeResult.season.join(' / ')
+                      : '未提供'}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600">
+                未匹配到条码信息，请改用上传抠图方式录入。
+              </div>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setSourceMode('upload')
+                  setBarcodeSheetOpen(false)
+                }}
+                className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-md text-gray-700"
+              >
+                改用上传抠图
+              </button>
+              <button
+                type="button"
+                onClick={applyBarcodeResult}
+                disabled={!barcodeResult}
+                className="flex-1 px-4 py-2 text-sm rounded-md bg-black text-white disabled:bg-gray-400"
+              >
+                直接入库
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
