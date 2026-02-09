@@ -1,4 +1,4 @@
-import { applyWhiteBackgroundAndShadow } from '@/lib/image-pipeline'
+import { applyWhiteBackground } from '@/lib/image-pipeline'
 
 export async function removeBackgroundWithAliyun(
   imageBuffer: Buffer,
@@ -46,5 +46,5 @@ export async function removeBackgroundWithAliyun(
     'base64'
   )
 
-  return applyWhiteBackgroundAndShadow(cutoutBuffer)
+  return applyWhiteBackground(cutoutBuffer)
 }

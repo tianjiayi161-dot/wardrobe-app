@@ -12,68 +12,43 @@ export type ClothingAttributeLabels = {
   description: string
 }
 
-export async function applyWhiteBackgroundAndShadow(inputBuffer: Buffer) {
-  const image = sharp(inputBuffer)
-  const metadata = await image.metadata()
+export async function applyWhiteBackground(inputBuffer: Buffer) {
+  const trimmed = await sharp(inputBuffer)
+    .trim({ threshold: 10 })
+    .png()
+    .toBuffer()
+
+  const metadata = await sharp(trimmed).metadata()
   const width = metadata.width || 1024
   const height = metadata.height || 1024
   const maxSide = Math.max(width, height)
-  const canvas = Math.ceil(maxSide / 0.8)
 
-  const resized = await image
+  const canvas = Math.ceil(maxSide / 0.7)
+  const resized = await sharp(trimmed)
     .resize({
-      width: Math.round(canvas * 0.8),
-      height: Math.round(canvas * 0.8),
+      width: Math.round(canvas * 0.7),
+      height: Math.round(canvas * 0.7),
       fit: 'inside',
     })
     .png()
     .toBuffer()
 
-  const shadowSource = sharp(resized)
-    .ensureAlpha()
-    .blur(12)
-    .tint({ r: 0, g: 0, b: 0 })
-
-  const shadowRaw = await shadowSource
-    .raw()
-    .toBuffer({ resolveWithObject: true })
-
-  const shadowData = Buffer.from(shadowRaw.data)
-  for (let i = 3; i < shadowData.length; i += 4) {
-    shadowData[i] = Math.round(shadowData[i] * 0.18)
-  }
-
-  const shadow = await sharp(shadowData, {
-    raw: {
-      width: shadowRaw.info.width,
-      height: shadowRaw.info.height,
-      channels: 4,
-    },
-  })
-    .png()
-    .toBuffer()
+  const resizedMeta = await sharp(resized).metadata()
+  const left = Math.round((canvas - (resizedMeta.width || 0)) / 2)
+  const top = Math.round((canvas - (resizedMeta.height || 0)) / 2)
 
   const base = sharp({
     create: {
       width: canvas,
       height: canvas,
-      channels: 4,
-      background: { r: 255, g: 255, b: 255, alpha: 1 },
+      channels: 3,
+      background: { r: 255, g: 255, b: 255 },
     },
   })
 
-  const left = Math.round((canvas - (await sharp(resized).metadata()).width!) / 2)
-  const top = Math.round((canvas - (await sharp(resized).metadata()).height!) / 2)
-
-  const shadowLeft = left + Math.round(canvas * 0.02)
-  const shadowTop = top + Math.round(canvas * 0.03)
-
   const out = await base
-    .composite([
-      { input: shadow, left: shadowLeft, top: shadowTop, blend: 'over' },
-      { input: resized, left, top },
-    ])
-    .png()
+    .composite([{ input: resized, left, top }])
+    .jpeg({ quality: 92 })
     .toBuffer()
 
   return out

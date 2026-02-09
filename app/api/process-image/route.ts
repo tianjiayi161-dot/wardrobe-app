@@ -22,11 +22,11 @@ export async function POST(request: NextRequest) {
     const processedBuffer = await removeBackgroundWithAliyun(imageBuffer, file.type)
     const processedUrl = await uploadToOSS(
       processedBuffer,
-      `processed-${Date.now()}.png`,
-      'image/png'
+      `processed-${Date.now()}.jpg`,
+      'image/jpeg'
     )
 
-    const labels = await extractAttributesFromImage(processedBuffer, 'image/png')
+    const labels = await extractAttributesFromImage(processedBuffer, 'image/jpeg')
 
     return NextResponse.json({
       success: true,
