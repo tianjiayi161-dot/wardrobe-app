@@ -382,6 +382,10 @@ function NewClothingForm() {
       let thumbnail = processedThumbnail
 
       if (!imageUrl) {
+        if (!imageFile) {
+          alert('请先选择图片')
+          return
+        }
         const uploadFormData = new FormData()
         uploadFormData.append('file', imageFile)
 
