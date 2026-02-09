@@ -29,10 +29,28 @@ export async function applyWhiteBackgroundAndShadow(inputBuffer: Buffer) {
     .png()
     .toBuffer()
 
-  const shadow = await sharp(resized)
+  const shadowSource = sharp(resized)
     .ensureAlpha()
     .blur(12)
     .tint({ r: 0, g: 0, b: 0 })
+
+  const shadowRaw = await shadowSource
+    .raw()
+    .toBuffer({ resolveWithObject: true })
+
+  const shadowData = Buffer.from(shadowRaw.data)
+  for (let i = 3; i < shadowData.length; i += 4) {
+    shadowData[i] = Math.round(shadowData[i] * 0.18)
+  }
+
+  const shadow = await sharp(shadowData, {
+    raw: {
+      width: shadowRaw.info.width,
+      height: shadowRaw.info.height,
+      channels: 4,
+    },
+  })
+    .png()
     .toBuffer()
 
   const base = sharp({
@@ -52,7 +70,7 @@ export async function applyWhiteBackgroundAndShadow(inputBuffer: Buffer) {
 
   const out = await base
     .composite([
-      { input: shadow, left: shadowLeft, top: shadowTop, blend: 'over', opacity: 0.18 },
+      { input: shadow, left: shadowLeft, top: shadowTop, blend: 'over' },
       { input: resized, left, top },
     ])
     .png()
