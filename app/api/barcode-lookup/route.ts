@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '缺少条码' }, { status: 400 })
     }
 
-    const provider = process.env.BARCODE_PROVIDER || 'go-upc'
+    const provider = process.env.BARCODE_PROVIDER || 'jisu'
     let result: LookupResult | null = null
     if (provider === 'jisu') {
       result = await lookupJisu(code)
