@@ -26,7 +26,76 @@ const CATEGORY_OPTIONS = [
 type AnalysisMode = 'fast' | 'enhanced' | 'assist'
 
 type Category = (typeof CATEGORY_OPTIONS)[number]
-type PendingAnalysis = Omit<GeminiAnalysisResult, 'category'> & { category: Category }
+type PendingAnalysis = Omit<GeminiAnalysisResult, 'category'> & {
+  category: Category
+  tags?: string[]
+}
+
+type AttributeLabels = {
+  category: Category
+  subcategory: string
+  colorsHex: string[]
+  material: string
+  colors: string[]
+  style: string[]
+  season: string[]
+  description: string
+}
+
+const COLOR_MAP: Record<string, string> = {
+  黑色: 'black',
+  白色: 'white',
+  灰色: 'gray',
+  米色: 'brown',
+  卡其色: 'brown',
+  藏青色: 'blue',
+  蓝色: 'blue',
+  深蓝色: 'blue',
+  浅蓝色: 'blue',
+  红色: 'red',
+  酒红色: 'red',
+  粉色: 'pink',
+  黄色: 'yellow',
+  绿色: 'green',
+  橙色: 'orange',
+  紫色: 'purple',
+  棕色: 'brown',
+  black: 'black',
+  white: 'white',
+  gray: 'gray',
+  beige: 'brown',
+  khaki: 'brown',
+  navy: 'blue',
+  blue: 'blue',
+  red: 'red',
+  pink: 'pink',
+  yellow: 'yellow',
+  green: 'green',
+  orange: 'orange',
+  purple: 'purple',
+  brown: 'brown',
+}
+
+const normalizeColors = (colors: string[]) => {
+  const normalized = colors
+    .map((color) => COLOR_MAP[color.trim().toLowerCase()] || COLOR_MAP[color.trim()] || color.toLowerCase())
+    .map((color) => color.trim())
+    .filter(Boolean)
+  return Array.from(new Set(normalized)).slice(0, 3)
+}
+
+const buildTagsFromLabels = (labels: AttributeLabels) => {
+  const tags: string[] = []
+  if (labels.subcategory) tags.push(labels.subcategory)
+  if (labels.material) tags.push(`材质:${labels.material}`)
+  return tags
+}
+
+const mergeTags = (base: string[], extra: string[]) => {
+  const set = new Set(base)
+  extra.forEach((tag) => set.add(tag))
+  return Array.from(set)
+}
 
 function NewClothingForm() {
   const router = useRouter()
@@ -49,6 +118,11 @@ function NewClothingForm() {
   const [imagePreview, setImagePreview] = useState<string>('')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [pendingAnalysis, setPendingAnalysis] = useState<PendingAnalysis | null>(null)
+  const [processedImageUrl, setProcessedImageUrl] = useState('')
+  const [processedThumbnail, setProcessedThumbnail] = useState('')
+  const [attributeLabels, setAttributeLabels] = useState<AttributeLabels | null>(
+    null
+  )
 
   const analysisSteps = useMemo(
     () => ['读取图片', '提取轮廓', '识别颜色', '判断类别', '生成标签'],
@@ -119,20 +193,82 @@ function NewClothingForm() {
     if (!file) return
 
     setImageFile(file)
+    setProcessedImageUrl('')
+    setProcessedThumbnail('')
+    setAttributeLabels(null)
+    setPendingAnalysis(null)
     setAnalyzing(true)
 
     try {
       const base64 = await readFileAsDataURL(file)
       setImagePreview(base64)
 
-      const analysisBase64 =
-        analysisMode === 'fast' ? await downscaleBase64(base64) : base64
-
-      await analyzeImage(file, analysisBase64, analysisMode === 'enhanced')
+      const processed = await processImage(file)
+      if (!processed) {
+        const analysisBase64 =
+          analysisMode === 'fast' ? await downscaleBase64(base64) : base64
+        await analyzeImage(file, analysisBase64, analysisMode === 'enhanced')
+      }
     } catch (error) {
       console.error('处理图片失败:', error)
     } finally {
       setAnalyzing(false)
+    }
+  }
+
+  const processImage = async (file: File) => {
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const response = await fetch('/api/process-image', {
+        method: 'POST',
+        body: form,
+      })
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        console.error('抠图处理失败:', data?.error)
+        return false
+      }
+
+      const labels: AttributeLabels = {
+        ...data.labels,
+        category: normalizeCategory(data.labels?.category || 'tshirt'),
+      }
+      const normalizedColors = normalizeColors(labels.colors || [])
+      const tags = buildTagsFromLabels(labels)
+
+      setProcessedImageUrl(data.imageUrl || '')
+      setProcessedThumbnail(data.thumbnail || '')
+      setAttributeLabels(labels)
+      if (data.imageUrl) setImagePreview(data.imageUrl)
+
+      const normalized: PendingAnalysis = {
+        category: labels.category,
+        colors: normalizedColors,
+        season: labels.season || [],
+        style: labels.style || [],
+        description: labels.description || labels.subcategory || '',
+        tags,
+      }
+
+      if (analysisMode === 'assist') {
+        setPendingAnalysis(normalized)
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          name: prev.name || labels.subcategory || normalized.description,
+          category: normalized.category,
+          colors: normalized.colors,
+          season: normalized.season,
+          style: normalized.style,
+          tags: mergeTags(prev.tags, tags),
+        }))
+      }
+
+      return true
+    } catch (error) {
+      console.error('抠图处理失败:', error)
+      return false
     }
   }
 
@@ -192,20 +328,26 @@ function NewClothingForm() {
     setLoading(true)
 
     try {
-      // 1. 上传图片到OSS
-      const uploadFormData = new FormData()
-      uploadFormData.append('file', imageFile)
+      let imageUrl = processedImageUrl
+      let thumbnail = processedThumbnail
 
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: uploadFormData,
-      })
+      if (!imageUrl) {
+        const uploadFormData = new FormData()
+        uploadFormData.append('file', imageFile)
 
-      const uploadData = await uploadResponse.json()
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        })
 
-      if (!uploadData.success) {
-        alert(uploadData.error || '图片上传失败')
-        return
+        const uploadData = await uploadResponse.json()
+
+        if (!uploadData.success) {
+          alert(uploadData.error || '图片上传失败')
+          return
+        }
+        imageUrl = uploadData.imageUrl
+        thumbnail = uploadData.thumbnail
       }
 
       // 2. 创建衣服记录
@@ -214,8 +356,8 @@ function NewClothingForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          imageUrl: uploadData.imageUrl,
-          thumbnail: uploadData.thumbnail,
+          imageUrl,
+          thumbnail,
         }),
       })
 
@@ -244,6 +386,7 @@ function NewClothingForm() {
       colors: pendingAnalysis.colors,
       season: pendingAnalysis.season,
       style: pendingAnalysis.style,
+      tags: mergeTags(prev.tags, pendingAnalysis.tags || []),
     }))
     setPendingAnalysis(null)
   }
@@ -349,6 +492,12 @@ function NewClothingForm() {
               <div className="text-xs text-gray-600">
                 {pendingAnalysis.description}
               </div>
+              {attributeLabels && (
+                <div className="text-xs text-gray-500">
+                  细分品类：{attributeLabels.subcategory || '—'} · 材质：
+                  {attributeLabels.material || '—'}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2 text-xs text-gray-600">
                 <span className="px-2 py-1 bg-gray-100 rounded">
                   类别：{pendingAnalysis.category}
