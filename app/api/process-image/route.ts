@@ -7,6 +7,13 @@ export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[cutout-env] endpoint:', !!process.env.ALIYUN_CUTOUT_ENDPOINT)
+    console.log('[cutout-env] appcode:', !!process.env.ALIYUN_CUTOUT_APPCODE)
+    const ak = process.env.ALIBABA_CLOUD_ACCESS_KEY_ID || ''
+    console.log('[cutout-env] ak.len:', ak.length)
+    console.log('[cutout-env] ak.tail:', ak ? ak.slice(-4) : 'none')
+    console.log('[cutout-env] secret:', !!process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET)
+
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     if (!file) {
