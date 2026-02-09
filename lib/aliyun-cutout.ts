@@ -76,12 +76,49 @@ export async function removeBackgroundWithAliyun(
     throw new Error('阿里云抠图失败: 未获得有效响应')
   }
 
-  const base64Result =
-    data?.data?.image ||
-    data?.data?.result ||
-    data?.result ||
-    data?.image ||
-    ''
+  console.log('[cutout-debug] response:', JSON.stringify(data).slice(0, 800))
+
+  const isBase64 = (value: string) =>
+    value.startsWith('data:image') || /^[A-Za-z0-9+/=]+$/.test(value)
+
+  const isUrl = (value: string) => /^https?:\/\//i.test(value)
+
+  const findPayload = (obj: any): { base64?: string; url?: string } => {
+    if (!obj || typeof obj !== 'object') return {}
+    for (const [key, value] of Object.entries(obj)) {
+      if (typeof value === 'string') {
+        if (isUrl(value)) return { url: value }
+        if (isBase64(value) && value.length > 200) return { base64: value }
+      }
+      if (typeof value === 'object') {
+        const nested = findPayload(value)
+        if (nested.base64 || nested.url) return nested
+      }
+    }
+    return {}
+  }
+
+  const payload =
+    findPayload({
+      data: data?.data,
+      result: data?.result,
+      image: data?.image,
+      output: data?.output,
+      response: data,
+    }) || {}
+
+  let base64Result = payload.base64 || ''
+  const urlResult = payload.url || ''
+
+  if (!base64Result && urlResult) {
+    const imageRes = await fetch(urlResult)
+    if (!imageRes.ok) {
+      const text = await imageRes.text()
+      throw new Error(`阿里云抠图结果下载失败: ${imageRes.status} ${text}`)
+    }
+    const arrayBuffer = await imageRes.arrayBuffer()
+    return applyWhiteBackground(Buffer.from(arrayBuffer))
+  }
 
   if (!base64Result) {
     throw new Error('阿里云抠图返回为空')
