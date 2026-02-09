@@ -96,6 +96,9 @@ export async function POST(request: NextRequest) {
       wearCount: input.wearCount ?? 0,
       brand: input.brand || undefined,
       price: input.price || undefined,
+      subcategory: input.subcategory || undefined,
+      material: input.material || undefined,
+      colorsHex: input.colorsHex || [],
       createdAt: new Date(),
       updatedAt: new Date(),
     }

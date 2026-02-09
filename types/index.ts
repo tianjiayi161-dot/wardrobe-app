@@ -28,6 +28,9 @@ export interface Clothing {
   wearCount: number // 穿着次数
   brand?: string    // 品牌（可选）
   price?: number    // 价格（可选）
+  subcategory?: string // 细分品类（可选）
+  material?: string    // 面料材质（可选）
+  colorsHex?: string[] // 颜色Hex（可选）
   createdAt: Date
   updatedAt: Date
 }
@@ -60,6 +63,9 @@ export interface CreateClothingInput {
   brand?: string
   price?: number
   wearCount?: number
+  subcategory?: string
+  material?: string
+  colorsHex?: string[]
 }
 
 // 搭配类型定义

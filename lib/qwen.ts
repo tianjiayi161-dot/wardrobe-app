@@ -365,3 +365,41 @@ ${clothesDescription}
     return []
   }
 }
+
+export async function generateImagePromptFromDescription(
+  description: string
+): Promise<string> {
+  const baseTemplate =
+    'A professional, clean, flat-lay product photography of [描述], centered on a pure white background, minimal style, 8k resolution, soft studio lighting.'
+  try {
+    const completion = await client.chat.completions.create({
+      model: 'qwen-plus',
+      messages: [
+        {
+          role: 'system',
+          content:
+            '你是资深产品摄影提示词专家。只输出一行英文提示词，不要加引号、不加解释。',
+        },
+        {
+          role: 'user',
+          content: `请将用户描述转为高质量图像提示词，并严格使用如下格式：
+A professional, clean, flat-lay product photography of [用户描述], centered on a pure white background, minimal style, 8k resolution, soft studio lighting.
+
+用户描述：${description}
+
+只输出最终提示词。`,
+        },
+      ],
+      temperature: 0.4,
+    })
+
+    const text = completion.choices[0]?.message?.content?.trim() || ''
+    if (!text) {
+      return baseTemplate.replace('[描述]', description)
+    }
+    return text
+  } catch (error) {
+    console.error('生成提示词失败:', error)
+    return baseTemplate.replace('[描述]', description)
+  }
+}

@@ -97,6 +97,12 @@ const mergeTags = (base: string[], extra: string[]) => {
   return Array.from(set)
 }
 
+const parseTags = (value: string) =>
+  value
+    .split(/[,，]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+
 function NewClothingForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -123,6 +129,9 @@ function NewClothingForm() {
   const [attributeLabels, setAttributeLabels] = useState<AttributeLabels | null>(
     null
   )
+  const [aiDescription, setAiDescription] = useState('')
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
 
   const analysisSteps = useMemo(
     () => ['读取图片', '提取轮廓', '识别颜色', '判断类别', '生成标签'],
@@ -141,6 +150,9 @@ function NewClothingForm() {
     brand: '',
     price: undefined as number | undefined,
     wearCount: 0,
+    subcategory: '',
+    material: '',
+    colorsHex: [] as string[],
   })
 
   useEffect(() => {
@@ -262,6 +274,9 @@ function NewClothingForm() {
           season: normalized.season,
           style: normalized.style,
           tags: mergeTags(prev.tags, tags),
+          subcategory: prev.subcategory || labels.subcategory || '',
+          material: prev.material || labels.material || '',
+          colorsHex: labels.colorsHex || [],
         }))
       }
 
@@ -269,6 +284,41 @@ function NewClothingForm() {
     } catch (error) {
       console.error('抠图处理失败:', error)
       return false
+    }
+  }
+
+  const handleGenerateByText = async () => {
+    const description = aiDescription.trim()
+    if (!description) {
+      alert('请先输入描述')
+      return
+    }
+    setAiGenerating(true)
+    setImageFile(null)
+    setProcessedImageUrl('')
+    setProcessedThumbnail('')
+    setAttributeLabels(null)
+    setPendingAnalysis(null)
+    try {
+      const response = await fetch('/api/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description }),
+      })
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        alert(data.error || '生成失败，请稍后重试')
+        return
+      }
+      setProcessedImageUrl(data.imageUrl || '')
+      setProcessedThumbnail(data.thumbnail || '')
+      setImagePreview(data.imageUrl || '')
+      setAiPrompt(data.prompt || '')
+    } catch (error) {
+      console.error('AI生成失败:', error)
+      alert('AI生成失败，请稍后重试')
+    } finally {
+      setAiGenerating(false)
     }
   }
 
@@ -320,8 +370,8 @@ function NewClothingForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!imageFile) {
-      alert('请选择图片')
+    if (!imageFile && !processedImageUrl) {
+      alert('请选择图片或先生成图片')
       return
     }
 
@@ -387,6 +437,9 @@ function NewClothingForm() {
       season: pendingAnalysis.season,
       style: pendingAnalysis.style,
       tags: mergeTags(prev.tags, pendingAnalysis.tags || []),
+      subcategory: prev.subcategory || attributeLabels?.subcategory || '',
+      material: prev.material || attributeLabels?.material || '',
+      colorsHex: attributeLabels?.colorsHex || prev.colorsHex,
     }))
     setPendingAnalysis(null)
   }
@@ -409,6 +462,38 @@ function NewClothingForm() {
       <h1 className="text-3xl font-bold text-gray-900">添加衣服</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {/* 文本生成 */}
+        <div className="space-y-3">
+          <label className="block text-sm font-medium text-gray-900">
+            描述生衣
+          </label>
+          <textarea
+            value={aiDescription}
+            onChange={(e) => setAiDescription(e.target.value)}
+            placeholder="例如：一件带有小猫图案的粉色卫衣"
+            rows={3}
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleGenerateByText}
+              disabled={aiGenerating || analyzing}
+              className="px-4 py-2 text-sm font-medium rounded-md bg-black text-white hover:bg-gray-800 disabled:bg-gray-400"
+            >
+              {aiGenerating ? '生成中...' : 'AI 生成图片'}
+            </button>
+            <span className="text-xs text-gray-500">
+              将自动生成白底商品图并加「衣序 AI」水印
+            </span>
+          </div>
+          {aiPrompt && (
+            <div className="text-xs text-gray-500">
+              生成提示词：{aiPrompt}
+            </div>
+          )}
+        </div>
+
         {/* 图片上传 */}
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-4">
@@ -571,6 +656,38 @@ function NewClothingForm() {
           </select>
         </div>
 
+        {/* 细分品类 / 材质 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-900">
+              细分品类
+            </label>
+            <input
+              type="text"
+              value={formData.subcategory}
+              onChange={(e) =>
+                setFormData({ ...formData, subcategory: e.target.value })
+              }
+              placeholder="如：连帽卫衣 / 直筒牛仔裤"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-900">
+              材质
+            </label>
+            <input
+              type="text"
+              value={formData.material}
+              onChange={(e) =>
+                setFormData({ ...formData, material: e.target.value })
+              }
+              placeholder="如：棉 / 牛仔 / 羊毛"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+            />
+          </div>
+        </div>
+
         {/* 颜色 */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-900">
@@ -638,6 +755,22 @@ function NewClothingForm() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* 标签 */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-900">
+            标签（可选，逗号分隔）
+          </label>
+          <input
+            type="text"
+            value={formData.tags.join(', ')}
+            onChange={(e) =>
+              setFormData({ ...formData, tags: parseTags(e.target.value) })
+            }
+            placeholder="如：通勤, 极简, 心头好"
+            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-black focus:border-transparent"
+          />
         </div>
 
         {/* 品牌（可选） */}

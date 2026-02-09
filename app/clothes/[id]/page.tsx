@@ -19,6 +19,9 @@ export default function ClothingDetailPage() {
     price: '',
     colors: '',
     wearCount: '',
+    subcategory: '',
+    material: '',
+    tags: '',
   })
 
   useEffect(() => {
@@ -39,6 +42,9 @@ export default function ClothingDetailPage() {
           price: data.clothing.price?.toString() || '',
           colors: (data.clothing.colors || []).join(', '),
           wearCount: data.clothing.wearCount?.toString() || '0',
+          subcategory: data.clothing.subcategory || '',
+          material: data.clothing.material || '',
+          tags: (data.clothing.tags || []).join(', '),
         })
       } else {
         alert(data.error || '获取衣服详情失败')
@@ -153,6 +159,30 @@ export default function ClothingDetailPage() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
               </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">细分品类</label>
+                <input
+                  value={form.subcategory}
+                  onChange={(e) => setForm((prev) => ({ ...prev, subcategory: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600">材质</label>
+                <input
+                  value={form.material}
+                  onChange={(e) => setForm((prev) => ({ ...prev, material: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm text-gray-600">标签（逗号分隔）</label>
+                <input
+                  value={form.tags}
+                  onChange={(e) => setForm((prev) => ({ ...prev, tags: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
+              </div>
               <div className="flex items-end">
                 <button
                   type="button"
@@ -170,6 +200,12 @@ export default function ClothingDetailPage() {
                           .map((c) => c.trim())
                           .filter(Boolean),
                         wearCount: form.wearCount ? Number(form.wearCount) : 0,
+                        subcategory: form.subcategory.trim() || undefined,
+                        material: form.material.trim() || undefined,
+                        tags: form.tags
+                          .split(/[,，]/)
+                          .map((t) => t.trim())
+                          .filter(Boolean),
                       }
                       const res = await fetch(`/api/clothes/${clothing._id}`, {
                         method: 'PUT',
@@ -221,6 +257,20 @@ export default function ClothingDetailPage() {
           <div className="space-y-2">
             <div className="text-gray-500">品牌</div>
             <div className="text-gray-900">{clothing.brand || '—'}</div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-gray-500">细分品类</div>
+            <div className="text-gray-900">{clothing.subcategory || '—'}</div>
+          </div>
+          <div className="space-y-2">
+            <div className="text-gray-500">材质</div>
+            <div className="text-gray-900">{clothing.material || '—'}</div>
+          </div>
+          <div className="space-y-2 col-span-2">
+            <div className="text-gray-500">标签</div>
+            <div className="text-gray-900">
+              {(clothing.tags || []).join(' / ') || '—'}
+            </div>
           </div>
         </div>
       </div>
