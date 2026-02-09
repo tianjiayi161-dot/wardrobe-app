@@ -42,18 +42,18 @@ export async function removeBackgroundWithAliyun(
     })
   }
 
-  const candidates: Array<() => Promise<Response>> = [
-    () => callJson({ image: base64, image_type: 'BASE64' }),
-    () => callJson({ img: base64 }),
-    () => callForm({ image: base64 }),
-    () => callJson({ image_url: originUrl }),
-    () => callForm({ image_url: originUrl }),
+  const candidates: Array<{ label: string; run: () => Promise<Response> }> = [
+    { label: 'json:image/base64', run: () => callJson({ image: base64, image_type: 'BASE64' }) },
+    { label: 'json:img/base64', run: () => callJson({ img: base64 }) },
+    { label: 'form:image/base64', run: () => callForm({ image: base64 }) },
+    { label: 'json:image_url', run: () => callJson({ image_url: originUrl }) },
+    { label: 'form:image_url', run: () => callForm({ image_url: originUrl }) },
   ]
 
   let res: Response | null = null
   let data: any = null
-  for (const request of candidates) {
-    res = await request()
+  for (const candidate of candidates) {
+    res = await candidate.run()
     const contentType = res.headers.get('content-type') || ''
     if (!contentType.includes('application/json')) {
       const text = await res.text()
@@ -65,6 +65,8 @@ export async function removeBackgroundWithAliyun(
       if (String(msg).includes('图片不能为空')) {
         continue
       }
+      console.error('[cutout-debug] candidate:', candidate.label)
+      console.error('[cutout-debug] response:', JSON.stringify(data).slice(0, 800))
       throw new Error(`阿里云抠图失败: ${res.status} ${JSON.stringify(data)}`)
     }
     break
