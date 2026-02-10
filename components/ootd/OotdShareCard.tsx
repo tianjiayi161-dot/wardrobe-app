@@ -43,13 +43,29 @@ export function OotdShareCard({
       const canvas = await html2canvas(cardRef.current, {
         scale: 3,
         useCORS: true,
-        backgroundColor: null,
+        backgroundColor: '#ffffff',
       })
-      const dataUrl = canvas.toDataURL('image/png')
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), 'image/png')
+      )
+      if (!blob) throw new Error('无法生成图片')
+
+      const file = new File([blob], `ootd-${Date.now()}.png`, {
+        type: 'image/png',
+      })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: '今日穿搭' })
+        return
+      }
+
+      const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
-      link.href = dataUrl
-      link.download = `ootd-${Date.now()}.png`
+      link.href = url
+      link.download = file.name
+      document.body.appendChild(link)
       link.click()
+      link.remove()
+      URL.revokeObjectURL(url)
     } catch (error) {
       console.error('导出失败:', error)
       alert('导出失败，请稍后重试')
@@ -94,28 +110,39 @@ export function OotdShareCard({
         </div>
 
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="flex items-center justify-center gap-6 px-8">
-            {items.slice(0, 3).map((item, index) => {
-              const rotation = rotations[index]?.deg ?? 0
-              return (
-                <div
-                  key={item.id}
-                  className="relative w-40 h-40 rounded-2xl bg-white/90 shadow-xl border border-white/70"
-                  style={{ transform: `rotate(${rotation}deg)` }}
-                >
-                  <img
-                    src={item.imageUrl}
-                    alt={item.alt || 'ootd item'}
-                    className="absolute inset-0 w-full h-full object-contain p-4"
-                    crossOrigin="anonymous"
-                  />
-                </div>
-              )
-            })}
-            {items.length === 0 && (
-              <div className="text-sm text-slate-500">暂无今日穿搭</div>
-            )}
-          </div>
+          {items.length === 0 ? (
+            <div className="text-sm text-slate-500">暂无今日穿搭</div>
+          ) : (
+            <div
+              className={`grid gap-4 px-8 ${
+                items.length === 1
+                  ? 'grid-cols-1'
+                  : 'grid-cols-2'
+              }`}
+            >
+              {items.slice(0, 3).map((item, index) => {
+                const rotation = rotations[index]?.deg ?? 0
+                const isWide = items.length === 3 && index === 0
+                const isSingle = items.length === 1
+                return (
+                  <div
+                    key={item.id}
+                    className={`relative rounded-2xl bg-white/90 shadow-xl border border-white/70 overflow-hidden ${
+                      isSingle ? 'w-72 h-72' : 'w-40 h-40'
+                    } ${isWide ? 'col-span-2 justify-self-center w-64 h-40' : ''}`}
+                    style={{ transform: `rotate(${rotation}deg)` }}
+                  >
+                    <img
+                      src={item.imageUrl}
+                      alt={item.alt || 'ootd item'}
+                      className="absolute inset-0 w-full h-full object-contain p-4"
+                      crossOrigin="anonymous"
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
 
         <div className="absolute left-8 right-8 bottom-10 text-center">
