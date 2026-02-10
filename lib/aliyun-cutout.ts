@@ -48,6 +48,10 @@ export async function removeBackgroundWithAliyun(
     { label: 'form:image/base64', run: () => callForm({ image: base64 }) },
     { label: 'json:image_url', run: () => callJson({ image_url: originUrl }) },
     { label: 'form:image_url', run: () => callForm({ image_url: originUrl }) },
+    { label: 'json:image/url', run: () => callJson({ image: originUrl }) },
+    { label: 'form:image/url', run: () => callForm({ image: originUrl }) },
+    { label: 'json:url', run: () => callJson({ url: originUrl }) },
+    { label: 'form:url', run: () => callForm({ url: originUrl }) },
   ]
 
   let res: Response | null = null
@@ -62,7 +66,7 @@ export async function removeBackgroundWithAliyun(
     data = await res.json()
     const msg = data?.msg || data?.message || ''
     if (!res.ok || data?.success === false) {
-      if (String(msg).includes('图片不能为空')) {
+      if (String(msg).includes('图片不能为空') || String(msg).includes('image is empty')) {
         continue
       }
       console.error('[cutout-debug] candidate:', candidate.label)
