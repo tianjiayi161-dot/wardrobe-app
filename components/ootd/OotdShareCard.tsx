@@ -64,7 +64,9 @@ export function OotdShareCard({
         ref={cardRef}
         className="relative mx-auto w-[360px] h-[640px] rounded-[28px] overflow-hidden border border-white/30 shadow-2xl bg-white"
         style={{
-          backgroundImage: backgroundImage ? `url(${backgroundImage})` : undefined,
+          backgroundImage: backgroundImage
+            ? `url(${backgroundImage})`
+            : 'linear-gradient(135deg, #FFF6E9 0%, #E6F0FF 100%)',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
@@ -110,6 +112,9 @@ export function OotdShareCard({
                 </div>
               )
             })}
+            {items.length === 0 && (
+              <div className="text-sm text-slate-500">暂无今日穿搭</div>
+            )}
           </div>
         </div>
 
